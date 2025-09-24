@@ -1,21 +1,34 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import os
+from models.models import SessionLocal, Product
 
-load_dotenv()  # Load DB_URL, SECRET_KEY from .env
+load_dotenv()
 
-app = FastAPI(title="Mpepo POS Backend", version="1.0.0")  # Name for auto-docs
+app = FastAPI(title="Mpepo POS Backend", version="1.0.0")
 
-# Allow mobile app to connect (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Later: restrict to Flutter app's URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @app.get("/")
 def root():
     return {"message": "Mpepo Kitchen POS Backend is running!"}
+
+@app.get("/test-db")
+def test_db(db: Session = Depends(get_db)):
+    count = db.query(Product).count()
+    return {"message": "Database connected", "product_count": count}
