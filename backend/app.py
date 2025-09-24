@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from dotenv import load_dotenv
 import os
-from models.models import SessionLocal, Product
+from models.models import SessionLocal, Product, Order, Invoice
 from pydantic import BaseModel
 from services.auth import validate_token
 import jwt
@@ -55,3 +56,18 @@ def login(login: Login):
 @app.get("/protected-test")
 def protected_test(payload: dict = Depends(validate_token)):
     return {"message": f"You are authenticated as {payload['sub']}!"}
+
+@app.get("/reports/sales")
+def get_sales_report(db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
+    """Get total sales and tax from invoices."""
+    result = db.query(
+        func.count(Invoice.id).label("total_invoices"),
+        func.sum(Invoice.total_amount).label("total_sales"),
+        func.sum(Invoice.tax_amount).label("total_tax")
+    ).first()
+    return {
+        "total_invoices": result.total_invoices or 0,
+        "total_sales": float(result.total_sales or 0.0),
+        "total_tax": float(result.total_tax or 0.0),
+        "generated_by": payload["sub"]
+    }
