@@ -1,0 +1,312 @@
+{
+	"info": {
+		"_postman_id": "c10be3ea-cfdc-4932-97ca-31381a4f5779",
+		"name": "Tax Authority Mock",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48627321"
+	},
+	"item": [
+		{
+			"name": "Submit Invoice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "Unsuccessful Submission",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"invoiceId\":\"INV_20251003_001\",\"saleDate\":\"2025-10-03T14:30:00Z\",\"totalAmount\":150.75,\"taxAmount\":15.00,\"items\":[{\"productId\":\"PROD_001\",\"productName\":\"Mpepo Burger\",\"quantity\":2,\"unitPrice\":50.00},{\"productId\":\"PROD_002\",\"productName\":\"Fries\",\"quantity\":1,\"unitPrice\":35.75}]}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://dd0f746d-52ee-4490-b6fc-f3bee400bf4f.mock.pstmn.io/trnsSales/saveSales",
+					"protocol": "https",
+					"host": [
+						"dd0f746d-52ee-4490-b6fc-f3bee400bf4f",
+						"mock",
+						"pstmn",
+						"io"
+					],
+					"path": [
+						"trnsSales",
+						"saveSales"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "successful response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text"
+							},
+							{
+								"key": "x-mock-response-name",
+								"value": "Error Response",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"invoiceId\":\"INV_20251003_001\",\"saleDate\":\"2025-10-03T14:30:00Z\",\"totalAmount\":150.75,\"taxAmount\":15.00,\"items\":[{\"productId\":\"PROD_001\",\"productName\":\"Mpepo Burger\",\"quantity\":2,\"unitPrice\":50.00},{\"productId\":\"PROD_002\",\"productName\":\"Fries\",\"quantity\":1,\"unitPrice\":35.75}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://dd0f746d-52ee-4490-b6fc-f3bee400bf4f.mock.pstmn.io/trnsSales/saveSales",
+							"protocol": "https",
+							"host": [
+								"dd0f746d-52ee-4490-b6fc-f3bee400bf4f",
+								"mock",
+								"pstmn",
+								"io"
+							],
+							"path": [
+								"trnsSales",
+								"saveSales"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 14:16:13 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=fd379f7e8ef4e938"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=25f0c971e5e122a0"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "x-ratelimit-limit",
+							"value": "120"
+						},
+						{
+							"key": "x-ratelimit-remaining",
+							"value": "119"
+						},
+						{
+							"key": "x-ratelimit-reset",
+							"value": "1758464233"
+						},
+						{
+							"key": "etag",
+							"value": "W/\"10f-iQ/6cTHOHhQG6g/jbUGqClHk7Zg\""
+						},
+						{
+							"key": "vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "x-envoy-upstream-service-time",
+							"value": "202"
+						},
+						{
+							"key": "cf-cache-status",
+							"value": "DYNAMIC"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "__cf_bm=g2OJCVUBec14d_CqtKKXfyhAeTaqT41PmkWVpQ36OK4-1758464173-1.0.1.1-1N6GNzry3TGzU2auaCIgQg0t_sF6jWxetYRhKb9E5WFOXVQ7u1SX.bhcjusCfXCCNhAf7yxaGJ55rgKCe2or5RVVp8a1oC_KNNcbD.TpNYg; path=/; expires=Sun, 21-Sep-25 14:46:13 GMT; domain=.pstmn.io; HttpOnly; Secure; SameSite=None"
+						},
+						{
+							"key": "Server",
+							"value": "cloudflare"
+						},
+						{
+							"key": "CF-RAY",
+							"value": "982a2dd6becc95f2-JNB"
+						}
+					],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"domain": "",
+							"path": ""
+						}
+					],
+					"body": "{\n  \"status\": \"success\",\n  \"message\": \"Invoice submitted successfully to Tax Authority.\",\n  \"authorityReferenceId\": \"TA_REF_890123\"\n}"
+				},
+				{
+					"name": "Unsuccessful response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text"
+							},
+							{
+								"key": "x-mock-response-code",
+								"value": "400",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"invoiceId\":\"INV_20251003_001\",\"saleDate\":\"2025-10-03T14:30:00Z\",\"totalAmount\":150.75,\"taxAmount\":15.00,\"items\":[{\"productId\":\"PROD_001\",\"productName\":\"Mpepo Burger\",\"quantity\":2,\"unitPrice\":50.00},{\"productId\":\"PROD_002\",\"productName\":\"Fries\",\"quantity\":1,\"unitPrice\":35.75}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://dd0f746d-52ee-4490-b6fc-f3bee400bf4f.mock.pstmn.io/trnsSales/saveSales",
+							"protocol": "https",
+							"host": [
+								"dd0f746d-52ee-4490-b6fc-f3bee400bf4f",
+								"mock",
+								"pstmn",
+								"io"
+							],
+							"path": [
+								"trnsSales",
+								"saveSales"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 19:20:42 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "CF-RAY",
+							"value": "982bebd83da59afa-LUN"
+						},
+						{
+							"key": "x-srv-trace",
+							"value": "v=1;t=fd379f7e8ef4e938"
+						},
+						{
+							"key": "x-srv-span",
+							"value": "v=1;s=25f0c971e5e122a0"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "x-ratelimit-limit",
+							"value": "120"
+						},
+						{
+							"key": "x-ratelimit-remaining",
+							"value": "119"
+						},
+						{
+							"key": "x-ratelimit-reset",
+							"value": "1758464233"
+						},
+						{
+							"key": "etag",
+							"value": "W/\"10f-iQ/6cTHOHhQG6g/jbUGqClHk7Zg\""
+						},
+						{
+							"key": "vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "x-envoy-upstream-service-time",
+							"value": "251"
+						},
+						{
+							"key": "cf-cache-status",
+							"value": "DYNAMIC"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "__cf_bm=g2OJCVUBec14d_CqtKKXfyhAeTaqT41PmkWVpQ36OK4-1758464173-1.0.1.1-1N6GNzry3TGzU2auaCIgQg0t_sF6jWxetYRhKb9E5WFOXVQ7u1SX.bhcjusCfXCCNhAf7yxaGJ55rgKCe2or5RVVp8a1oC_KNNcbD.TpNYg; path=/; expires=Sun, 21-Sep-25 14:46:13 GMT; domain=.pstmn.io; HttpOnly; Secure; SameSite=None"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "__cf_bm=SFXKFF5wA3qvm2XLa_EYqcWd38MydmXsnLtbEMjt468-1758482442-1.0.1.1-7PLxfBRQuYo9FV.lo5Wt0sTuWhYITr0rTpXOUtGNYAB6WCFRVcsgajClRgE.I8.ISRZhoshP8dGEcnV7KYDJ6xK2b_k_efTL02J7cbdtzms; path=/; expires=Sun, 21-Sep-25 19:50:42 GMT; domain=.pstmn.io; HttpOnly; Secure; SameSite=None"
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "Server",
+							"value": "cloudflare"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": \"unsuccess\",\n    \"message\": \"Invoice submitted successfully to Tax Authority.\",\n    \"authorityReferenceId\": \"TA_REF_890123\"\n}"
+				}
+			]
+		}
+	]
+}
