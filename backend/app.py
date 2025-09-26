@@ -8,11 +8,11 @@ from models.models import SessionLocal, Product, Order, Invoice, InvoiceLog
 from pydantic import BaseModel
 from services.auth import validate_token
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 from tax_client import submit_invoice as tax_submit_invoice
 import logging
-from sqlmodel import create_engine, SQLModel
+from sqlmodel import create_engine, SQLModel, select
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -218,3 +218,37 @@ def get_invoice_log(cis_invc_no: str, db: Session = Depends(get_db), payload: di
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
     return json.loads(log.response)
+
+@app.get("/api/reports/daily-sales")
+async def daily_sales(date_str: str = str(date.today()), db: Session = Depends(get_db), token: str = Depends(validate_token)):
+    try:
+        logging.debug(f"Fetching daily sales for {date_str}")
+        sales = db.query(Order).filter(Order.order_date == date_str).all()
+        total_sales = sum(order.total_price for order in sales)
+        report = {
+            "date": date_str,
+            "total_sales": total_sales,
+            "orders": [{"id": o.id, "product_id": o.product_id, "quantity": o.quantity, "total_price": o.total_price} for o in sales]
+        }
+        logging.debug(f"Daily sales report: {json.dumps(report, indent=2)}")
+        return report
+    except Exception as e:
+        logging.error(f"Error fetching daily sales: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reports/tax")
+async def tax_report(date_str: str = str(date.today()), db: Session = Depends(get_db), token: str = Depends(validate_token)):
+    try:
+        logging.debug(f"Fetching tax report for {date_str}")
+        invoices = db.query(Invoice).filter(Invoice.invoice_date == date_str).all()
+        total_tax = sum(invoice.tax_amount for invoice in invoices)
+        report = {
+            "date": date_str,
+            "total_tax": total_tax,
+            "invoices": [{"id": i.id, "cis_invc_no": i.cis_invc_no, "total_amount": i.total_amount, "tax_amount": i.tax_amount} for i in invoices]
+        }
+        logging.debug(f"Tax report: {json.dumps(report, indent=2)}")
+        return report
+    except Exception as e:
+        logging.error(f"Error fetching tax report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
