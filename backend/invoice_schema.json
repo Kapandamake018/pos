@@ -1,0 +1,17 @@
+{
+  "tpin": "string (max 10 chars, required)",
+  "bhfId": "string (max 3 chars, required)",
+  "deviceSerialNo": "string (max 50 chars, required)",
+  "invcNo": "string (max 50 chars, required)",
+  "salesDt": "string (required)",
+  "invoiceType": "string (required)",
+  "transactionType": "string (required)",
+  "paymentType": "string (required)",
+  "customerTpin": "string (max 10 chars, optional)",
+  "customerNm": "string (max 60 chars, optional)",
+  "totalItemCnt": "integer (required)",
+  "items": "array of objects (required)",
+  "totTaxblAmt": "number (required)",
+  "totTaxAmt": "number (required)",
+  "totAmt": "number (required)"
+}
