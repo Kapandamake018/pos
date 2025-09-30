@@ -1,0 +1,35 @@
+# Python / Backend ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+pos.db  # SQLite DB file (generated, don't commit data)
+*.db-journal
+
+# Flutter / Mobile ignores
+build/
+*.dart_tool
+*.flutter-plugins
+*.flutter-plugins-dependencies
+ios/Pods/
+ios/Podfile.lock
+android/.gradle/
+android/app/build/
+lib/generated_plugin_registrant.dart  # If generated
+pubspec.lock  # Can be regenerated
+
+# General ignores
+.DS_Store  # MacOS
+Thumbs.db  # Windows
+.idea/  # IntelliJ/VS Code workspace
+.vscode/
+*.log
+*.tmp
+*.bak
+node_modules/  # If any JS
+
+# Sensitive or local
+secrets.json
+api_keys.txt
