@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlmodel import Session, create_engine, SQLModel, select  # Changed: Import Session from sqlmodel
 from sqlalchemy.sql import func
 from dotenv import load_dotenv
 import os
-from models.models import SessionLocal, Product, Order, Invoice, InvoiceLog
+from models.models import Product, Order, Invoice, InvoiceLog
 from pydantic import BaseModel
 from services.auth import validate_token
 import jwt
@@ -12,21 +12,16 @@ from datetime import datetime, timedelta, date
 import json
 from tax_client import submit_invoice as tax_submit_invoice
 import logging
-from sqlmodel import create_engine, SQLModel, select
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 # Initialize database and create tables
-DATABASE_URL = os.getenv("DB_URL", "sqlite:///C:/projects/pos/backend/pos.db")
-engine = create_engine(DATABASE_URL, echo=True)  # echo=True for debug logs
-SQLModel.metadata.create_all(engine)  # Create all tables
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///C:/projects/pos/backend/pos.db")
+engine = create_engine(DATABASE_URL, echo=True)
+SQLModel.metadata.create_all(engine)
 
 app = FastAPI(title="Mpepo POS Backend", version="1.0.0")
-# Rest of app.py remains unchanged
-
-# engine = create_engine(os.getenv("DB_URL"))  # Define engine
-# SQLModel.metadata.create_all(engine)  # Create all tables
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,11 +32,9 @@ app.add_middleware(
 )
 
 def get_db():
-    db = SessionLocal()
-    try:
+    # Changed: Use SQLModel's Session instead of SQLAlchemy's Session
+    with Session(engine) as db:
         yield db
-    finally:
-        db.close()
 
 class Login(BaseModel):
     username: str
@@ -93,7 +86,7 @@ def root():
 
 @app.get("/test-db")
 def test_db(db: Session = Depends(get_db)):
-    count = db.query(Product).count()
+    count = len(db.exec(select(Product)).all())
     return {"message": "Database connected", "product_count": count}
 
 @app.post("/login")
@@ -113,10 +106,12 @@ def protected_test(payload: dict = Depends(validate_token)):
 
 @app.get("/reports/sales")
 def get_sales_report(db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
-    result = db.query(
-        func.count(Invoice.id).label("total_invoices"),
-        func.sum(Invoice.total_amount).label("total_sales"),
-        func.sum(Invoice.tax_amount).label("total_tax")
+    result = db.exec(
+        select(
+            func.count(Invoice.id).label("total_invoices"),
+            func.sum(Invoice.total_amount).label("total_sales"),
+            func.sum(Invoice.tax_amount).label("total_tax")
+        )
     ).first()
     return {
         "total_invoices": result.total_invoices or 0,
@@ -131,11 +126,9 @@ def submit_invoice(invoice: InvoiceSubmission, db: Session = Depends(get_db), pa
         invoice_data = invoice.model_dump()
         logging.info(f"Original invoice_data: {json.dumps(invoice_data, indent=2)}")
 
-        # ✅ Switch mock mode on/off with environment variable
         USE_POSTMAN_MOCK = os.getenv("USE_POSTMAN_MOCK", "true").lower() == "true"
 
         if USE_POSTMAN_MOCK:
-            # --- Fixed body for Postman mock server ---
             transformed_data = {
                 "bhfId": "000",
                 "deviceSerialNo": "DEVICE123",
@@ -164,7 +157,6 @@ def submit_invoice(invoice: InvoiceSubmission, db: Session = Depends(get_db), pa
                 "totalAmt": 23.2
             }
         else:
-            # --- Dynamic transformation for real API ---
             transformed_data = {
                 "bhfId": invoice_data["bhfId"],
                 "deviceSerialNo": os.getenv("DEVICE_SERIAL_NO", "DEVICE123"),
@@ -214,16 +206,16 @@ def submit_invoice(invoice: InvoiceSubmission, db: Session = Depends(get_db), pa
 
 @app.get("/api/invoices/logs/{cis_invc_no}")
 def get_invoice_log(cis_invc_no: str, db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
-    log = db.query(InvoiceLog).filter(InvoiceLog.cis_invc_no == cis_invc_no).first()
+    log = db.exec(select(InvoiceLog).where(InvoiceLog.cis_invc_no == cis_invc_no)).first()
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
     return json.loads(log.response)
 
 @app.get("/api/reports/daily-sales")
-async def daily_sales(date_str: str = str(date.today()), db: Session = Depends(get_db), token: str = Depends(validate_token)):
+async def daily_sales(date_str: str = str(date.today()), db: Session = Depends(get_db), token: dict = Depends(validate_token)):
     try:
         logging.debug(f"Fetching daily sales for {date_str}")
-        sales = db.query(Order).filter(Order.order_date == date_str).all()
+        sales = db.exec(select(Order).where(Order.order_date == date_str)).all()
         total_sales = sum(order.total_price for order in sales)
         report = {
             "date": date_str,
@@ -237,10 +229,10 @@ async def daily_sales(date_str: str = str(date.today()), db: Session = Depends(g
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/reports/tax")
-async def tax_report(date_str: str = str(date.today()), db: Session = Depends(get_db), token: str = Depends(validate_token)):
+async def tax_report(date_str: str = str(date.today()), db: Session = Depends(get_db), token: dict = Depends(validate_token)):
     try:
         logging.debug(f"Fetching tax report for {date_str}")
-        invoices = db.query(Invoice).filter(Invoice.invoice_date == date_str).all()
+        invoices = db.exec(select(Invoice).where(Invoice.invoice_date == date_str)).all()
         total_tax = sum(invoice.tax_amount for invoice in invoices)
         report = {
             "date": date_str,
