@@ -1,85 +1,60 @@
-main.py
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, JSON, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-from tax_client import submit_invoice
-from dotenv import load_dotenv
-import os
+from pydantic import BaseModel
+from typing import List
+import uvicorn
 
-load_dotenv()
+app = FastAPI(title="Invoice Submission API (Mocked)")
 
-app = FastAPI()
-
-ENGINE = create_engine("sqlite:///pos.db")
-Base = declarative_base()
-Session = sessionmaker(bind=ENGINE)
-
-class InvoiceLog(Base):
-    __tablename__ = "invoice_logs"
-    id = Column(Integer, primary_key=True)
-    invc_no = Column(String)
-    status = Column(String)
-    response = Column(JSON)
-    timestamp = Column(DateTime)
-
-Base.metadata.create_all(ENGINE)
-
+# ✅ Item Schema
 class Item(BaseModel):
-    itemCd: str = Field(...)
-    itemNm: str = Field(...)
-    qty: float = Field(...)
-    prc: float = Field(...)
-    taxblAmt: float = Field(...)
-    taxAmt: float = Field(...)
-    totAmt: float = Field(...)
+    itemCd: str
+    itemNm: str
+    qty: int
+    prc: float
+    taxblAmt: float
+    taxAmt: float
+    totAmt: float
 
+# ✅ Invoice Schema
 class Invoice(BaseModel):
-    tpin: str = Field(max_length=10)
-    bhfId: str = Field(max_length=3)
-    deviceSerialNo: str = Field(max_length=50)
-    invcNo: str = Field(max_length=50)
+    tpin: str
+    bhfId: str
+    deviceSerialNo: str
+    invcNo: str
     salesDt: str
     invoiceType: str
     transactionType: str
     paymentType: str
-    customerTpin: str | None = None
-    customerNm: str | None = None
+    customerTpin: str = None
+    customerNm: str = None
     totalItemCnt: int
-    items: list[Item]
+    items: List[Item]
     totTaxblAmt: float
     totTaxAmt: float
     totAmt: float
 
+# ✅ Always succeed
 @app.post("/api/invoices/submit")
-def submit_and_log(invoice: Invoice):
-    api_url = os.getenv("TAX_API_URL")
-    result = submit_invoice(invoice.dict(), api_url, invoice.tpin, invoice.bhfId, invoice.deviceSerialNo)
-    
-    status = result.get("status", "UNKNOWN")
-    
-    session = Session()
-    log = InvoiceLog(
-        invc_no=invoice.invcNo,
-        status=status,
-        response=result,
-        timestamp=datetime.now()
-    )
-    session.add(log)
-    session.commit()
-    session.close()
-    
-    if status != "SUCCESS":
-        raise HTTPException(400, result.get("message", "Submission failed"))
-    return result
+async def submit_invoice(invoice: Invoice):
+    return {
+        "status": "success",
+        "message": "Invoice submitted successfully to Tax Authority.",
+        "authorityReferenceId": "TA_REF_123456",
+        "invoiceId": invoice.invcNo
+    }
 
-@app.get("/api/invoices/logs/{invc_no}")
-def get_log(invc_no: str):
-    session = Session()
-    log = session.query(InvoiceLog).filter_by(invc_no=invc_no).first()
-    session.close()
-    if not log:
-        raise HTTPException(404, "Log not found")
-    return {"status": log.status, "response": log.response}
+# ❌ Always fail with HTTP 400
+@app.post("/api/invoices/fail")
+async def fail_invoice(invoice: Invoice):
+    raise HTTPException(
+        status_code=400,
+        detail={
+            "status": "failed",
+            "message": "Invoice rejected by Tax Authority.",
+            "errorCode": "TA_ERR_400",
+            "invoiceId": invoice.invcNo
+        }
+    )
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
