@@ -1,42 +1,24 @@
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import logging
-from dotenv import load_dotenv
 import os
+import httpx
+from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
 
-def submit_invoice(invoice_data, api_url, tpin, bhf_id, device_serial_no):
-    session = requests.Session()
-    retry = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
+TAX_API_URL = os.getenv("TAX_API_URL")
+POSTMAN_API_KEY = os.getenv("POSTMAN_API_KEY")
 
+if not TAX_API_URL or not POSTMAN_API_KEY:
+    raise ValueError("❌ TAX_API_URL or POSTMAN_API_KEY is missing in .env file!")
+
+async def submit_invoice_to_tax_authority(invoice_data: dict):
+    url = f"{TAX_API_URL}/trnsSales/saveSales"
     headers = {
-        'Content-Type': 'application/json',
-        'TPIN': tpin,
-        'BhfId': bhf_id,
-        'DeviceSerialNo': device_serial_no
+        "Content-Type": "application/json",
+        "x-api-key": POSTMAN_API_KEY,   # ✅ Required for private mock servers
     }
 
-    full_url = api_url + '/trnsSales/saveSales'
-    try:
-        response = session.post(full_url, json=invoice_data, headers=headers, timeout=10)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=invoice_data, headers=headers)
         response.raise_for_status()
-        logging.info(f"Success: {response.json()}")
         return response.json()
-    except requests.exceptions.HTTPError as errh:
-        logging.error(f"HTTP Error: {errh}")
-        return {"status": "ERROR", "message": str(errh)}
-    except requests.exceptions.ConnectionError as errc:
-        logging.error(f"Connection Error: {errc}")
-        return {"status": "ERROR", "message": str(errc)}
-    except requests.exceptions.Timeout as errt:
-        logging.error(f"Timeout Error: {errt}")
-        return {"status": "ERROR", "message": str(errt)}
-    except requests.exceptions.RequestException as err:
-        logging.error(f"Request Error: {err}")
-        return {"status": "ERROR", "message": str(err)}
