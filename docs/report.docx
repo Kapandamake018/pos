@@ -1,0 +1,185 @@
+📑 Student B Deliverable Report
+1. Introduction
+
+This project implements the Invoice Submission System for a POS application.
+
+The role of Student B is to handle invoice submission and integration with a Tax Authority system.
+
+Key contributions:
+
+Backend service (FastAPI) to accept invoices and forward them to a tax system.
+
+Mock success and failure responses to simulate the Tax Authority.
+
+Flutter app that collects invoice details, submits them, and displays success or failure messages.
+
+2. System Design
+2.1 Architecture
+
+Frontend: Flutter mobile app (cross-platform, Android/iOS).
+
+Backend: FastAPI (Python, lightweight, async).
+
+Communication: REST API (JSON).
+
+2.2 Flow
+
+User creates invoice in Flutter app.
+
+Invoice submitted to FastAPI backend.
+
+FastAPI either returns success or failure.
+
+3. Backend Implementation (FastAPI)
+Endpoints:
+
+POST /api/invoices/submit → returns success.
+
+POST /api/invoices/fail → returns failure (400).
+
+Example Success Request
+{
+  "tpin": "123456789",
+  "bhfId": "001",
+  "deviceSerialNo": "POS-01",
+  "invcNo": "INV_20251003_001",
+  "salesDt": "2025-10-03T14:30:00Z",
+  "invoiceType": "N",
+  "transactionType": "SALE",
+  "paymentType": "CASH",
+  "customerTpin": "987654321",
+  "customerNm": "John Banda",
+  "totalItemCnt": 2,
+  "items": [
+    {
+      "itemCd": "PROD_001",
+      "itemNm": "Mpepo Burger",
+      "qty": 2,
+      "prc": 50.0,
+      "taxblAmt": 100.0,
+      "taxAmt": 10.0,
+      "totAmt": 110.0
+    }
+  ],
+  "totTaxblAmt": 100.0,
+  "totTaxAmt": 10.0,
+  "totAmt": 110.0
+}
+
+Example Success Response
+{
+  "status": "success",
+  "message": "Invoice submitted successfully to Tax Authority.",
+  "authorityReferenceId": "TA_REF_123456",
+  "invoiceId": "INV_20251003_001"
+}
+
+Example Fail Response
+{
+  "detail": {
+    "status": "failed",
+    "message": "Invoice rejected by Tax Authority.",
+    "errorCode": "TA_ERR_400",
+    "invoiceId": "INV_20251003_001"
+  }
+}
+
+4. Flutter Implementation
+
+The Flutter app is split into two parts:
+
+UI (main.dart) → Captures invoice details and provides buttons for success/fail submission.
+
+Service (invoice_service.dart) → Handles API calls to backend.
+
+📂 File Structure
+flutter_app/lib/
+ ├── main.dart
+ └── services/
+     └── invoice_service.dart
+
+5. Setup Instructions
+Backend Setup
+
+Navigate to backend/
+
+Install dependencies:
+
+pip install fastapi uvicorn python-dotenv
+
+
+Run server:
+
+uvicorn main:app --reload
+
+
+Open docs at: 👉 http://127.0.0.1:8000/docs
+
+Flutter Setup
+
+Navigate to flutter_app/
+
+Install dependencies:
+
+flutter pub add http
+
+
+Run app in emulator:
+
+flutter run
+
+
+Use http://10.0.2.2:8000 for Android emulator
+
+Use http://127.0.0.1:8000 for Flutter web
+
+6. Testing
+Postman
+
+/submit → ✅ success
+
+/fail → ❌ rejection (400)
+
+Flutter Emulator
+
+Success snackbar (green)
+
+Failure snackbar (red)
+
+📸 Insert screenshots:
+
+Postman success
+
+Postman fail
+
+Flutter success
+
+Flutter failure
+
+7. Challenges Faced
+
+.env setup required python-dotenv.
+
+Mock server errors (404) resolved by creating FastAPI mocks.
+
+Flutter dependency (connectivity_plus) was deprecated → upgraded.
+
+Emulator networking required 10.0.2.2 instead of localhost.
+
+8. Conclusion
+
+✅ Student B successfully implemented:
+
+FastAPI backend with mock success & failure endpoints.
+
+Flutter app (main.dart + invoice_service.dart) for invoice submission.
+
+Verification with Postman + Emulator.
+
+Future improvements:
+
+Offline storage & retry queue.
+
+Multi-item invoices in Flutter.
+
+Real integration with Tax Authority API.

@@ -5,8 +5,16 @@ import logging
 from dotenv import load_dotenv
 import os
 
+# Load environment variables
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
+
+# Validate environment variables
+TAX_API_URL = os.getenv("TAX_API_URL")
+POSTMAN_API_KEY = os.getenv("POSTMAN_API_KEY")
+
+if not TAX_API_URL or not POSTMAN_API_KEY:
+    raise ValueError("❌ TAX_API_URL or POSTMAN_API_KEY is missing in .env file!")
 
 def submit_invoice(invoice_data, api_url, tpin, bhf_id, device_serial_no):
     logging.info(f"Input type: {type(invoice_data)}")
@@ -18,7 +26,7 @@ def submit_invoice(invoice_data, api_url, tpin, bhf_id, device_serial_no):
 
     headers = {
         'Content-Type': 'application/json',
-        'x-api-key': os.getenv('POSTMAN_API_KEY'),
+        'x-api-key': POSTMAN_API_KEY,
         'TPIN': tpin,
         'BhfId': bhf_id,
         'DeviceSerialNo': device_serial_no
