@@ -5,3 +5,5 @@ backend/*.pyc
 venv/
 _pycache_/
 *.pyc
+models/__pycache__
+services/__pycache__
