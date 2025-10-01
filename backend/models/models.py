@@ -1,22 +1,15 @@
-from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-import os
 from dotenv import load_dotenv
-from sqlmodel import SQLModel, Field
+import os
+from sqlmodel import SQLModel, Field, Session, create_engine
 from typing import Optional
-
-
 
 load_dotenv()
-DATABASE_URL = os.getenv("DB_URL")
 
-Base = declarative_base()
+DATABASE_URL = os.getenv("DB_URL", "sqlite:///C:/projects/pos/backend/pos.db")
+engine = create_engine(DATABASE_URL, echo=True)  
 
 
-from sqlmodel import SQLModel, Field
-from typing import Optional
+SessionLocal = Session
 
 class Product(SQLModel, table=True):
     __tablename__ = "products"
@@ -49,6 +42,4 @@ class InvoiceLog(SQLModel, table=True):
     cis_invc_no: str = Field(index=True)
     response: str
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-#Base.metadata.create_all(bind=engine)
+SQLModel.metadata.create_all(engine)

@@ -25,8 +25,8 @@ SQLModel.metadata.create_all(engine)  # Create all tables
 app = FastAPI(title="Mpepo POS Backend", version="1.0.0")
 # Rest of app.py remains unchanged
 
-engine = create_engine(os.getenv("DB_URL"))  # Define engine
-SQLModel.metadata.create_all(engine)  # Create all tables
+# engine = create_engine(os.getenv("DB_URL"))  # Define engine
+# SQLModel.metadata.create_all(engine)  # Create all tables
 
 app.add_middleware(
     CORSMiddleware,
