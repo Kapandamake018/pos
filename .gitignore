@@ -1,5 +1,0 @@
-backend/.env
-backend/pos.db
-backend/__pycache__/
-backend/*.pyc
-venv/
