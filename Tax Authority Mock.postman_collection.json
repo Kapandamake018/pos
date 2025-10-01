@@ -1,0 +1,596 @@
+{
+	"info": {
+		"_postman_id": "dbedb217-1d3a-4d31-aad0-2eaf9942fa6d",
+		"name": "Tax Authority Mock",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48219673"
+	},
+	"item": [
+		{
+			"name": "ZRA Mock API requests",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "x-api-key",
+						"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+						"type": "text"
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "400 Bad Request",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bhfId\": \"000\",\n  \"deviceSerialNo\": \"DEVICE123\",\n  \"invcNo\": \"INV-001\",\n  \"salesDt\": \"2025-09-25 12:00:00\",\n  \"invoiceType\": \"NORMAL\",\n  \"transactionType\": \"SALE\",\n  \"paymentType\": \"CASH\",\n  \"customerTpin\": \"0987654321\",\n  \"customerNm\": \"Test Customer\",\n  \"totalItemCnt\": 1,\n  \"items\": [\n    {\n      \"itemCd\": \"PROD001\",\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 10.0,\n      \"taxCategory\": \"VAT\",\n      \"taxRate\": 16.0,\n      \"taxAmt\": 3.2,\n      \"totAmt\": 23.2\n    }\n  ],\n  \"taxableAmt\": 20.0,\n  \"taxAmt\": 3.2,\n  \"totalAmt\": 23.2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7.mock.pstmn.io/trnsSales/saveSales.",
+					"protocol": "https",
+					"host": [
+						"0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7",
+						"mock",
+						"pstmn",
+						"io"
+					],
+					"path": [
+						"trnsSales",
+						"saveSales."
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Successful Submission",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bhfId\": \"000\",\n  \"deviceSerialNo\": \"DEVICE123\",\n  \"invcNo\": \"INV-001\",\n  \"salesDt\": \"2025-09-25 12:00:00\",\n  \"invoiceType\": \"NORMAL\",\n  \"transactionType\": \"SALE\",\n  \"paymentType\": \"CASH\",\n  \"customerTpin\": \"0987654321\",\n  \"customerNm\": \"Test Customer\",\n  \"totalItemCnt\": 1,\n  \"items\": [\n    {\n      \"itemCd\": \"PROD001\",\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 10.0,\n      \"taxCategory\": \"VAT\",\n      \"taxRate\": 16.0,\n      \"taxAmt\": 3.2,\n      \"totAmt\": 23.2\n    }\n  ],\n  \"taxableAmt\": 20.0,\n  \"taxAmt\": 3.2,\n  \"totalAmt\": 23.2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7.mock.pstmn.io/trnsSales/saveSales.",
+							"protocol": "https",
+							"host": [
+								"0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7",
+								"mock",
+								"pstmn",
+								"io"
+							],
+							"path": [
+								"trnsSales",
+								"saveSales."
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "x-api-key",
+							"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"status\": \"SUCCESS\",\n  \"confirmationId\": \"CONF-12345\",\n  \"timestamp\": \"2025-09-25T12:00:00\",\n  \"message\": \"Invoice submitted successfully\"\n}"
+				},
+				{
+					"name": "Unsuccessful Submission",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text"
+							},
+							{
+								"key": "x-mock-response-name",
+								"value": "Unsuccessful Submission",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bhfId\": \"000\",\n  \"deviceSerialNo\": \"DEVICE123\",\n  \"invcNo\": \"INV-001\",\n  \"salesDt\": \"2025-09-25 12:00:00\",\n  \"invoiceType\": \"NORMAL\",\n  \"transactionType\": \"SALE\",\n  \"paymentType\": \"CASH\",\n  \"customerTpin\": \"0987654321\",\n  \"customerNm\": \"Test Customer\",\n  \"totalItemCnt\": 1,\n  \"items\": [\n    {\n      \"itemCd\": \"PROD001\",\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 10.0,\n      \"taxCategory\": \"VAT\",\n      \"taxRate\": 16.0,\n      \"taxAmt\": 3.2,\n      \"totAmt\": 23.2\n    }\n  ],\n  \"taxableAmt\": 20.0,\n  \"taxAmt\": 3.2,\n  \"totalAmt\": 23.2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7.mock.pstmn.io/trnsSales/saveSales.",
+							"protocol": "https",
+							"host": [
+								"0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7",
+								"mock",
+								"pstmn",
+								"io"
+							],
+							"path": [
+								"trnsSales",
+								"saveSales."
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "x-api-key",
+							"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "x-mock-response-name",
+							"value": "Unsuccessful Submission",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"status\": \"ERROR\",\n  \"code\": \"INVALID_TPIN\",\n  \"message\": \"Invalid taxpayer ID\"\n}"
+				}
+			]
+		},
+		{
+			"name": "API requests end point tests",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "x-api-key",
+						"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tpin\": \"1234567890\",\n  \"bhfId\": \"000\",\n  \"deviceSerialNo\": \"DEVICE123\",\n  \"invcNo\": \"INV-001\",\n  \"salesDt\": \"2025-09-25 12:00:00\",\n  \"invoiceType\": \"NORMAL\",\n  \"transactionType\": \"SALE\",\n  \"paymentType\": \"CASH\",\n  \"customerTpin\": \"0987654321\",\n  \"customerNm\": \"Test Customer\",\n  \"totalItemCnt\": 1,\n  \"items\": [\n    {\n      \"itemCd\": \"PROD001\",\n      \"itemNm\": \"Burger\",\n      \"qty\": 2.0,\n      \"prc\": 10.0,\n      \"taxblAmt\": 20.0,\n      \"taxAmt\": 3.2,\n      \"totAmt\": 23.2\n    }\n  ],\n  \"totTaxblAmt\": 20.0,\n  \"totTaxAmt\": 3.2,\n  \"totAmt\": 23.2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/invoices/submit",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"invoices",
+						"submit"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Sucessful end point",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tpin\": \"1234567890\",\n  \"bhfId\": \"000\",\n  \"cisInvcNo\": \"INV-009\",\n  \"custTpin\": \"0987654321\",\n  \"custNm\": \"Test Customer\",\n  \"salesTyCd\": \"N\",\n  \"rcptTyCd\": \"S\",\n  \"pmtTyCd\": \"CASH\",\n  \"salesSttsCd\": \"02\",\n  \"cfmDt\": \"20250925140000\",\n  \"salesDt\": \"20250925\",\n  \"totItemCnt\": 1,\n  \"taxblAmtA\": 10.0,\n  \"taxAmtA\": 1.6,\n  \"totTaxblAmt\": 10.0,\n  \"totTaxAmt\": 1.6,\n  \"totAmt\": 11.6,\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 5.0,\n      \"splyAmt\": 10.0,\n      \"taxTyCd\": \"A\",\n      \"taxblAmt\": 10.0,\n      \"taxAmt\": 1.6,\n      \"totAmt\": 11.6\n    }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/invoices/submit",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"invoices",
+								"submit"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "x-api-key",
+							"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"status\": \"success\",\n  \"message\": \"Invoice submitted successfully to Tax Authority.\",\n  \"authorityReferenceId\": \"TA_REF_123456\",\n  \"invoiceId\": \"INV_20251003_001\"\n}\n"
+				},
+				{
+					"name": "Unsuccessful End point",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tpin\": \"123456789\",\n  \"bhfId\": \"001\",\n  \"deviceSerialNo\": \"POS-01\",\n  \"invcNo\": \"INV_20251003_001\",\n  \"salesDt\": \"2025-10-03T14:30:00Z\",\n  \"invoiceType\": \"N\",\n  \"transactionType\": \"SALE\",\n  \"paymentType\": \"CASH\",\n  \"customerTpin\": \"987654321\",\n  \"customerNm\": \"John Banda\",\n  \"totalItemCnt\": 2,\n  \"items\": [\n    {\n      \"itemCd\": \"PROD_001\",\n      \"itemNm\": \"Mpepo Burger\",\n      \"qty\": 2,\n      \"prc\": 50.00,\n      \"taxblAmt\": 100.00,\n      \"taxAmt\": 10.00,\n      \"totAmt\": 110.00\n    },\n    {\n      \"itemCd\": \"PROD_002\",\n      \"itemNm\": \"Fries\",\n      \"qty\": 1,\n      \"prc\": 35.75,\n      \"taxblAmt\": 35.75,\n      \"taxAmt\": 5.00,\n      \"totAmt\": 40.75\n    }\n  ],\n  \"totTaxblAmt\": 135.75,\n  \"totTaxAmt\": 15.00,\n  \"totAmt\": 150.75\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/invoices/fail",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"invoices",
+								"fail"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"name": "Content-Type",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "x-api-key",
+							"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"detail\": {\n    \"status\": \"failed\",\n    \"message\": \"Invoice rejected by Tax Authority.\",\n    \"errorCode\": \"TA_ERR_400\",\n    \"invoiceId\": \"INV_20251003_001\"\n  }\n}\n"
+				}
+			]
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "x-api-key",
+						"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"admin\",\r\n  \"password\": \"password\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/login",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Invoice Log",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/invoices/logs/INV-009",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"invoices",
+						"logs",
+						"INV-009"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sales Report",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/reports/sales",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"reports",
+						"sales"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Daily Sales Report",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/reports/daily-sales?date_str=2025-09-24",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"reports",
+						"daily-sales"
+					],
+					"query": [
+						{
+							"key": "date_str",
+							"value": "2025-09-24"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tax Report",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/reports/tax?date_str=2025-09-24",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"reports",
+						"tax"
+					],
+					"query": [
+						{
+							"key": "",
+							"value": null,
+							"disabled": true
+						},
+						{
+							"key": "date_str",
+							"value": "2025-09-24"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
