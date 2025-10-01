@@ -3,3 +3,5 @@ backend/pos.db
 backend/__pycache__/
 backend/*.pyc
 venv/
+_pycache_/
+*.pyc
