@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, create_engine, SQLModel, select  # Changed: Import Session from sqlmodel
+from sqlmodel import Session, create_engine, SQLModel, select
 from sqlalchemy.sql import func
 from dotenv import load_dotenv
 import os
@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, date
 import json
 from tax_client import submit_invoice as tax_submit_invoice
 import logging
+from typing import Optional
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -32,13 +33,25 @@ app.add_middleware(
 )
 
 def get_db():
-    # Changed: Use SQLModel's Session instead of SQLAlchemy's Session
     with Session(engine) as db:
         yield db
 
+# Pydantic Models
 class Login(BaseModel):
     username: str
     password: str
+
+class ProductCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+    stock: int
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    stock: Optional[int] = None
 
 class InvoiceSubmission(BaseModel):
     tpin: str
@@ -80,6 +93,7 @@ class InvoiceSubmission(BaseModel):
     modrNm: str | None = None
     itemList: list
 
+# Health Check Endpoints
 @app.get("/")
 def root():
     return {"message": "Mpepo Kitchen POS Backend is running!"}
@@ -89,6 +103,7 @@ def test_db(db: Session = Depends(get_db)):
     count = len(db.exec(select(Product)).all())
     return {"message": "Database connected", "product_count": count}
 
+# Authentication Endpoints
 @app.post("/login")
 def login(login: Login):
     if login.username != "admin" or login.password != "password":
@@ -104,8 +119,82 @@ def login(login: Login):
 def protected_test(payload: dict = Depends(validate_token)):
     return {"message": f"You are authenticated as {payload['sub']}!"}
 
+# Product CRUD Endpoints (Student C)
+@app.post("/api/products", response_model=Product)
+def create_product(
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(validate_token)
+):
+    """Create a new product (requires authentication)"""
+    db_product = Product(**product.model_dump())
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+@app.get("/api/products")
+def get_products(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """Get all products (no authentication required for listing)"""
+    products = db.exec(select(Product).offset(skip).limit(limit)).all()
+    return products
+
+@app.get("/api/products/{product_id}", response_model=Product)
+def get_product(
+    product_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get a single product by ID"""
+    product = db.exec(select(Product).where(Product.id == product_id)).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+@app.put("/api/products/{product_id}", response_model=Product)
+def update_product(
+    product_id: int,
+    product_update: ProductUpdate,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(validate_token)
+):
+    """Update an existing product (requires authentication)"""
+    db_product = db.exec(select(Product).where(Product.id == product_id)).first()
+    if not db_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Update only provided fields
+    update_data = product_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_product, key, value)
+    
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+@app.delete("/api/products/{product_id}")
+def delete_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(validate_token)
+):
+    """Delete a product (requires authentication)"""
+    db_product = db.exec(select(Product).where(Product.id == product_id)).first()
+    if not db_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    db.delete(db_product)
+    db.commit()
+    return {"message": "Product deleted successfully", "id": product_id}
+
+# Reporting Endpoints (Student C)
 @app.get("/reports/sales")
 def get_sales_report(db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
+    """Get aggregated sales report (requires authentication)"""
     result = db.exec(
         select(
             func.count(Invoice.id).label("total_invoices"),
@@ -120,8 +209,46 @@ def get_sales_report(db: Session = Depends(get_db), payload: dict = Depends(vali
         "generated_by": payload["sub"]
     }
 
+@app.get("/api/reports/daily-sales")
+async def daily_sales(date_str: str = str(date.today()), db: Session = Depends(get_db), token: dict = Depends(validate_token)):
+    """Get daily sales report for a specific date (requires authentication)"""
+    try:
+        logging.debug(f"Fetching daily sales for {date_str}")
+        sales = db.exec(select(Order).where(Order.order_date == date_str)).all()
+        total_sales = sum(order.total_price for order in sales)
+        report = {
+            "date": date_str,
+            "total_sales": total_sales,
+            "orders": [{"id": o.id, "product_id": o.product_id, "quantity": o.quantity, "total_price": o.total_price} for o in sales]
+        }
+        logging.debug(f"Daily sales report: {json.dumps(report, indent=2)}")
+        return report
+    except Exception as e:
+        logging.error(f"Error fetching daily sales: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reports/tax")
+async def tax_report(date_str: str = str(date.today()), db: Session = Depends(get_db), token: dict = Depends(validate_token)):
+    """Get tax report for a specific date (requires authentication)"""
+    try:
+        logging.debug(f"Fetching tax report for {date_str}")
+        invoices = db.exec(select(Invoice).where(Invoice.invoice_date == date_str)).all()
+        total_tax = sum(invoice.tax_amount for invoice in invoices)
+        report = {
+            "date": date_str,
+            "total_tax": total_tax,
+            "invoices": [{"id": i.id, "cis_invc_no": i.cis_invc_no, "total_amount": i.total_amount, "tax_amount": i.tax_amount} for i in invoices]
+        }
+        logging.debug(f"Tax report: {json.dumps(report, indent=2)}")
+        return report
+    except Exception as e:
+        logging.error(f"Error fetching tax report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Invoice Endpoints (Student B)
 @app.post("/api/invoices/submit")
 def submit_invoice(invoice: InvoiceSubmission, db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
+    """Submit invoice to ZRA tax authority (requires authentication)"""
     try:
         invoice_data = invoice.model_dump()
         logging.info(f"Original invoice_data: {json.dumps(invoice_data, indent=2)}")
@@ -206,41 +333,8 @@ def submit_invoice(invoice: InvoiceSubmission, db: Session = Depends(get_db), pa
 
 @app.get("/api/invoices/logs/{cis_invc_no}")
 def get_invoice_log(cis_invc_no: str, db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
+    """Get invoice submission log by invoice number (requires authentication)"""
     log = db.exec(select(InvoiceLog).where(InvoiceLog.cis_invc_no == cis_invc_no)).first()
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
     return json.loads(log.response)
-
-@app.get("/api/reports/daily-sales")
-async def daily_sales(date_str: str = str(date.today()), db: Session = Depends(get_db), token: dict = Depends(validate_token)):
-    try:
-        logging.debug(f"Fetching daily sales for {date_str}")
-        sales = db.exec(select(Order).where(Order.order_date == date_str)).all()
-        total_sales = sum(order.total_price for order in sales)
-        report = {
-            "date": date_str,
-            "total_sales": total_sales,
-            "orders": [{"id": o.id, "product_id": o.product_id, "quantity": o.quantity, "total_price": o.total_price} for o in sales]
-        }
-        logging.debug(f"Daily sales report: {json.dumps(report, indent=2)}")
-        return report
-    except Exception as e:
-        logging.error(f"Error fetching daily sales: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/reports/tax")
-async def tax_report(date_str: str = str(date.today()), db: Session = Depends(get_db), token: dict = Depends(validate_token)):
-    try:
-        logging.debug(f"Fetching tax report for {date_str}")
-        invoices = db.exec(select(Invoice).where(Invoice.invoice_date == date_str)).all()
-        total_tax = sum(invoice.tax_amount for invoice in invoices)
-        report = {
-            "date": date_str,
-            "total_tax": total_tax,
-            "invoices": [{"id": i.id, "cis_invc_no": i.cis_invc_no, "total_amount": i.total_amount, "tax_amount": i.tax_amount} for i in invoices]
-        }
-        logging.debug(f"Tax report: {json.dumps(report, indent=2)}")
-        return report
-    except Exception as e:
-        logging.error(f"Error fetching tax report: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))

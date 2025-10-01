@@ -1,0 +1,589 @@
+{
+	"info": {
+		"_postman_id": "acf71c4e-2c79-4deb-862a-1c5afb4e0fd5",
+		"name": "Mpepo Kitchen POS - Complete API",
+		"description": "Complete API collection for Mpepo Kitchen POS System - Student C contributions: Authentication, Products CRUD, Reports",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48219673"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('access_token', jsonData.access_token);",
+									"    console.log('Token saved:', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/login",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"login"
+							]
+						},
+						"description": "Authenticate and get JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Protected Test",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/protected-test",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"protected-test"
+							]
+						},
+						"description": "Test JWT token validation"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints - Student C"
+		},
+		{
+			"name": "Products CRUD (Student C)",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/products?skip=0&limit=100",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"products"
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0",
+									"description": "Number of records to skip"
+								},
+								{
+									"key": "limit",
+									"value": "100",
+									"description": "Maximum number of records"
+								}
+							]
+						},
+						"description": "Retrieve all products (no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/products/1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"products",
+								"1"
+							]
+						},
+						"description": "Get a single product by ID (no authentication required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Grilled Tilapia\",\n  \"description\": \"Fresh grilled tilapia with rice\",\n  \"price\": 65.0,\n  \"stock\": 25\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/products",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "Create a new product (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"price\": 50.0,\n  \"stock\": 35\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/products/1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"products",
+								"1"
+							]
+						},
+						"description": "Update an existing product (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/products/9",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"products",
+								"9"
+							]
+						},
+						"description": "Delete a product (requires authentication)"
+					},
+					"response": []
+				}
+			],
+			"description": "Product CRUD operations - Student C"
+		},
+		{
+			"name": "Reports (Student C)",
+			"item": [
+				{
+					"name": "Sales Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/reports/sales",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"reports",
+								"sales"
+							]
+						},
+						"description": "Get aggregated sales report (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Daily Sales Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/reports/daily-sales?date_str=2025-10-01",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"reports",
+								"daily-sales"
+							],
+							"query": [
+								{
+									"key": "date_str",
+									"value": "2025-10-01",
+									"description": "Date in YYYY-MM-DD format"
+								}
+							]
+						},
+						"description": "Get daily sales report for specific date (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Tax Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/reports/tax?date_str=2025-10-01",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"reports",
+								"tax"
+							],
+							"query": [
+								{
+									"key": "date_str",
+									"value": "2025-10-01",
+									"description": "Date in YYYY-MM-DD format"
+								}
+							]
+						},
+						"description": "Get tax report for specific date (requires authentication)"
+					},
+					"response": []
+				}
+			],
+			"description": "Reporting endpoints - Student C"
+		},
+		{
+			"name": "Invoices (Student B)",
+			"item": [
+				{
+					"name": "Submit Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tpin\": \"1234567890\",\n  \"bhfId\": \"000\",\n  \"cisInvcNo\": \"INV-009\",\n  \"custTpin\": \"0987654321\",\n  \"custNm\": \"Test Customer\",\n  \"salesTyCd\": \"N\",\n  \"rcptTyCd\": \"S\",\n  \"pmtTyCd\": \"CASH\",\n  \"salesSttsCd\": \"02\",\n  \"cfmDt\": \"20250925140000\",\n  \"salesDt\": \"20250925\",\n  \"totItemCnt\": 1,\n  \"taxblAmtA\": 10.0,\n  \"taxAmtA\": 1.6,\n  \"totTaxblAmt\": 10.0,\n  \"totTaxAmt\": 1.6,\n  \"totAmt\": 11.6,\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 5.0,\n      \"splyAmt\": 10.0,\n      \"taxTyCd\": \"A\",\n      \"taxblAmt\": 10.0,\n      \"taxAmt\": 1.6,\n      \"totAmt\": 11.6\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/invoices/submit",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"invoices",
+								"submit"
+							]
+						},
+						"description": "Submit invoice to ZRA (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice Log",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/invoices/logs/INV-001",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"invoices",
+								"logs",
+								"INV-001"
+							]
+						},
+						"description": "Get invoice submission log (requires authentication)"
+					},
+					"response": []
+				}
+			],
+			"description": "Invoice submission and logging - Student B"
+		},
+		{
+			"name": "ZRA Mock Server",
+			"item": [
+				{
+					"name": "ZRA Mock Submit Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "PMAK-68d00209fc1f20000199c01e-fc8a153b49e8ac24d73536ecd7441e83ce",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bhfId\": \"000\",\n  \"deviceSerialNo\": \"DEVICE123\",\n  \"invcNo\": \"INV-001\",\n  \"salesDt\": \"2025-09-25 12:00:00\",\n  \"invoiceType\": \"NORMAL\",\n  \"transactionType\": \"SALE\",\n  \"paymentType\": \"CASH\",\n  \"customerTpin\": \"0987654321\",\n  \"customerNm\": \"Test Customer\",\n  \"totalItemCnt\": 1,\n  \"items\": [\n    {\n      \"itemCd\": \"PROD001\",\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 10.0,\n      \"taxCategory\": \"VAT\",\n      \"taxRate\": 16.0,\n      \"taxAmt\": 3.2,\n      \"totAmt\": 23.2\n    }\n  ],\n  \"taxableAmt\": 20.0,\n  \"taxAmt\": 3.2,\n  \"totalAmt\": 23.2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7.mock.pstmn.io/trnsSales/saveSales",
+							"protocol": "https",
+							"host": [
+								"0d4ed8e3-2aaf-4e28-81fe-47e19f5423a7",
+								"mock",
+								"pstmn",
+								"io"
+							],
+							"path": [
+								"trnsSales",
+								"saveSales"
+							]
+						},
+						"description": "Direct test of ZRA mock server"
+					},
+					"response": []
+				}
+			],
+			"description": "ZRA Tax Authority mock endpoints"
+		},
+		{
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "Root Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								""
+							]
+						},
+						"description": "Check if API is running"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Database Connection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/test-db",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"test-db"
+							]
+						},
+						"description": "Verify database connection and get product count"
+					},
+					"response": []
+				}
+			],
+			"description": "Health check endpoints"
+		}
+	],
+	"variable": [
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
