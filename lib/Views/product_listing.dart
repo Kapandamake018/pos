@@ -117,7 +117,7 @@ class ProductCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
-              '\$${product.price.toStringAsFixed(2)}',
+              'K${product.price.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
             ),
           ),
@@ -125,7 +125,7 @@ class ProductCard extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepOrange,
+                backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -158,6 +158,8 @@ class CartView extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Shopping Cart',
@@ -165,14 +167,20 @@ class CartView extends StatelessWidget {
           ),
           const Divider(),
           if (posService.cart.isEmpty)
-            Expanded(
+
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 64.0),
               child: Center(
                 child: Text('Your cart is empty.'),
               ),
             )
           else
-            Expanded(
+
+          // Flexible allows the ListView to shrink and not cause an overflow.
+            Flexible(
               child: ListView.builder(
+
+                shrinkWrap: true,
                 itemCount: posService.cart.length,
                 itemBuilder: (context, index) {
                   final cartItem = posService.cart[index];
@@ -185,7 +193,7 @@ class CartView extends StatelessWidget {
           const SizedBox(height: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
@@ -211,7 +219,7 @@ class CartListItem extends StatelessWidget {
       child: ListTile(
         leading: Image.network(cartItem.product.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
         title: Text(cartItem.product.name),
-        subtitle: Text('\$${cartItem.product.price.toStringAsFixed(2)}'),
+        subtitle: Text('K${cartItem.product.price.toStringAsFixed(2)}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -238,13 +246,13 @@ class CalculationSummary extends StatelessWidget {
 
     return Column(
       children: [
-        _buildSummaryRow('Subtotal:', '\$${posService.subtotal.toStringAsFixed(2)}'),
-        _buildSummaryRow('Discount (10%):', '-\$${posService.discountValue.toStringAsFixed(2)}'),
-        _buildSummaryRow('Tax (8%):', '+\$${posService.taxValue.toStringAsFixed(2)}'),
+        _buildSummaryRow('Subtotal:', 'k${posService.subtotal.toStringAsFixed(2)}'),
+        _buildSummaryRow('Discount (10%):', '-k${posService.discountValue.toStringAsFixed(2)}'),
+        _buildSummaryRow('Tax (8%):', '+k${posService.taxValue.toStringAsFixed(2)}'),
         const Divider(),
         _buildSummaryRow(
           'Total:',
-          '\$${posService.total.toStringAsFixed(2)}',
+          'K${posService.total.toStringAsFixed(2)}',
           isTotal: true,
         ),
       ],

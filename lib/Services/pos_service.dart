@@ -8,11 +8,12 @@ class PosService extends ChangeNotifier {
   // --- Product Listing ---
   final List<Product> _catalog = [
     // Sample Data
-    Product(id: '1', name: 'Classic Burger', description: 'A juicy beef patty with fresh vegetables.', price: 8.99, imageUrl: 'https://via.placeholder.com/150'),
-    Product(id: '2', name: 'Fries', description: 'Crispy golden fries.', price: 3.49, imageUrl: 'https://via.placeholder.com/150'),
-    Product(id: '3', name: 'Soda', description: 'Refreshing carbonated drink.', price: 1.99, imageUrl: 'https://via.placeholder.com/150'),
-    Product(id: '4', name: 'Cheese Pizza', description: 'Classic cheese pizza with a thin crust.', price: 12.50, imageUrl: 'https://via.placeholder.com/150'),
-    Product(id: '5', name: 'Caesar Salad', description: 'Fresh romaine lettuce with Caesar dressing.', price: 7.00, imageUrl: 'https://via.placeholder.com/150'),
+    Product(id: '1', name: 'Classic Burger', description: 'A juicy beef patty with fresh vegetables.', price: 20.00, imageUrl: 'https://via.placeholder.com/150'),
+    Product(id: '2', name: 'Fries', description: 'Crispy golden fries.', price: 30.50, imageUrl: 'https://via.placeholder.com/150'),
+    Product(id: '3', name: 'Soda', description: 'Refreshing carbonated drink.', price: 20.00, imageUrl: 'https://via.placeholder.com/150'),
+    Product(id: '4', name: 'Pizza', description: 'Classic cheese pizza with a thin crust.', price: 150.00, imageUrl: 'https://via.placeholder.com/150'),
+    Product(id: '5', name: 'Salad', description: 'Fresh romaine lettuce with Caesar dressing.', price: 30.00, imageUrl: 'https://via.placeholder.com/150'),
+    Product(id: '6', name: 'Nshima', description: 'Tasty Nshima', price: 30.00, imageUrl: 'https://via.placeholder.com/150'),
   ];
 
   List<Product> get catalog => _catalog;
