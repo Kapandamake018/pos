@@ -28,6 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepOrange,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+
       ),
       debugShowCheckedModeBanner: false,
       home: const ProductListingScreen(),
