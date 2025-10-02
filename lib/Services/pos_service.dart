@@ -13,6 +13,7 @@ class PosService extends ChangeNotifier {
 
   List<Product> _products = [];
   bool _isLoading = false;
+  String? _lastError; // add
 
   // Reports (optional screens)
   Map<String, dynamic>? _salesReport;
@@ -21,6 +22,7 @@ class PosService extends ChangeNotifier {
 
   // Getters expected by existing UI
   bool get isLoading => _isLoading;
+  String? get lastError => _lastError; // add
   Cart get cart => _cart;
 
   // Some parts of UI use `catalog`, others use `products`
@@ -46,7 +48,9 @@ class PosService extends ChangeNotifier {
     );
 
     if (res.statusCode == 200) {
-      final token = (json.decode(res.body) as Map<String, dynamic>)['access_token'] as String;
+      final token =
+          (json.decode(res.body) as Map<String, dynamic>)['access_token']
+              as String;
       await _authService.saveToken(token);
       return token;
     }
@@ -56,16 +60,24 @@ class PosService extends ChangeNotifier {
   // Products
   Future<void> fetchProducts() async {
     _isLoading = true;
+    _lastError = null; // reset
     notifyListeners();
 
     try {
-      final res = await _authenticatedRequest('/api/products');
+      final res = await _authenticatedRequest(
+        '/api/products',
+      ).timeout(const Duration(seconds: 10));
+
       if (res.statusCode == 200) {
         final List data = json.decode(res.body) as List;
-        _products = data.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
+        _products = data
+            .map((e) => Product.fromJson(e as Map<String, dynamic>))
+            .toList();
       } else {
-        throw Exception('Failed to load products: ${res.body}');
+        _lastError = 'Failed to load products (${res.statusCode})';
       }
+    } on Exception catch (e) {
+      _lastError = 'Network error: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -109,7 +121,9 @@ class PosService extends ChangeNotifier {
   }
 
   Future<void> fetchDailySalesReport(String date) async {
-    final res = await _authenticatedRequest('/api/reports/daily-sales?date_str=$date');
+    final res = await _authenticatedRequest(
+      '/api/reports/daily-sales?date_str=$date',
+    );
     if (res.statusCode == 200) {
       _dailySalesReport = json.decode(res.body) as Map<String, dynamic>;
       notifyListeners();

@@ -31,6 +31,25 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
           );
         }
 
+        if (pos.lastError != null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Products')),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(pos.lastError!, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => pos.fetchProducts(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Products'),
@@ -123,7 +142,8 @@ class _CartSheet extends StatelessWidget {
                         return ListTile(
                           title: Text(item.product.name),
                           subtitle: Text(
-                              'Qty: ${item.quantity} • ZMW ${item.total.toStringAsFixed(2)}'),
+                            'Qty: ${item.quantity} • ZMW ${item.total.toStringAsFixed(2)}',
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
