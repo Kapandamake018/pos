@@ -5,30 +5,53 @@ import 'package:provider/provider.dart';
 import 'Services/pos_service.dart';
 import 'Views/login_screen.dart';
 
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => PosService(),
-      child: const MyApp(),
-    ),
-  );
-}
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Now, MyApp and all its children (including MaterialApp and its pages)
-    // are below the ChangeNotifierProvider in the widget tree.
+    const seed = Colors.deepOrange;
     return MaterialApp(
-      title: 'Mpepo Kitchen POS',
+      title: 'Mpepo POS',
+      themeMode: ThemeMode.light,
       theme: ThemeData(
-        primarySwatch: Colors.deepOrange,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: seed,
+          brightness: Brightness.light,
+        ),
+        appBarTheme: const AppBarTheme(centerTitle: true),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          filled: true,
+          fillColor: Colors.orange.withOpacity(0.06),
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+        ),
       ),
-      debugShowCheckedModeBanner: false,
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: seed,
+          brightness: Brightness.dark,
+        ),
+      ),
       home: const LoginScreen(),
     );
   }
+}
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(create: (_) => PosService(), child: const MyApp()),
+  );
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../Services/pos_service.dart';
-import '../Models/cart_item_model.dart';
 import '../Models/product_model.dart';
+import '../Models/cart_item_model.dart';
 
 class ProductListingScreen extends StatefulWidget {
   const ProductListingScreen({super.key});
@@ -30,7 +30,6 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
         if (pos.lastError != null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Products')),
@@ -41,7 +40,7 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
                   Text(pos.lastError!, textAlign: TextAlign.center),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () => pos.fetchProducts(),
+                    onPressed: pos.fetchProducts,
                     child: const Text('Retry'),
                   ),
                 ],
@@ -52,7 +51,7 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Products'),
+            title: const Text('Menu'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
@@ -60,19 +59,55 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
               ),
             ],
           ),
-          body: ListView.builder(
-            itemCount: pos.catalog.length,
-            itemBuilder: (context, index) {
-              final Product product = pos.catalog[index];
-              return ListTile(
-                title: Text(product.name),
-                subtitle: Text('ZMW ${product.price.toStringAsFixed(2)}'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add_shopping_cart),
-                  onPressed: () => pos.addToCart(product),
-                ),
-              );
-            },
+          body: Padding(
+            padding: const EdgeInsets.all(12),
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: pos.catalog.length,
+              itemBuilder: (_, i) {
+                final Product p = pos.catalog[i];
+                return Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          p.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const Spacer(),
+                        Text(
+                          'ZMW ${p.price.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => pos.addToCart(p),
+                            icon: const Icon(Icons.add_shopping_cart, size: 18),
+                            label: const Text('Add'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
           bottomNavigationBar: _CartSummaryBar(pos: pos),
         );
@@ -165,13 +200,25 @@ class _CartSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Row('Subtotal', pos.subtotal),
                   _Row('Discount', -pos.discountValue),
                   _Row('Tax', pos.taxValue),
-                  const Divider(),
+                  const SizedBox(height: 8),
                   _Row('Total', pos.total, isBold: true),
                 ],
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  child: const Text('Checkout'),
+                ),
               ),
             ),
           ],

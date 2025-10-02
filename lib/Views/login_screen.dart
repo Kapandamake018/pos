@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../Services/pos_service.dart';
-import '../Views/product_listing.dart';
+import 'product_listing.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,77 +11,134 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _username = TextEditingController();
-  final _password = TextEditingController();
+  final _form = GlobalKey<FormState>();
+  final _user = TextEditingController();
+  final _pass = TextEditingController();
   bool _loading = false;
   String? _error;
 
   @override
   void dispose() {
-    _username.dispose();
-    _password.dispose();
+    _user.dispose();
+    _pass.dispose();
     super.dispose();
   }
 
-  Future<void> _doLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _login() async {
+    if (!_form.currentState!.validate()) return;
     setState(() {
       _loading = true;
       _error = null;
     });
-
     try {
-      await context.read<PosService>().login(_username.text, _password.text);
+      await context.read<PosService>().login(_user.text, _pass.text);
       if (!mounted) return;
-      // Navigate to products screen after login
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const ProductListingScreen()),
       );
-    } on Exception catch (e) {
-      setState(() => _error = e.toString());
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Login failed. ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_error!), behavior: SnackBarBehavior.floating),
+      );
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_error != null)
-                Text(_error!, style: const TextStyle(color: Colors.red)),
-              TextFormField(
-                controller: _username,
-                decoration: const InputDecoration(labelText: 'Username'),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Required' : null,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [cs.primaryContainer, cs.primary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Card(
+              elevation: 6,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _password,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Required' : null,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _form,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 36,
+                        backgroundColor: cs.primary.withOpacity(0.15),
+                        child: Icon(
+                          Icons.restaurant_menu,
+                          color: cs.primary,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Mpepo Kitchen POS',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 8),
+                        Text(_error!, style: TextStyle(color: cs.error)),
+                      ],
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _user,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Username',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _pass,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _loading ? null : _login,
+                          icon: _loading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.login),
+                          label: const Text('Sign in'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-              _loading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _doLogin,
-                      child: const Text('Login'),
-                    ),
-            ],
+            ),
           ),
         ),
       ),
