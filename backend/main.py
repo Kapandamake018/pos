@@ -1,21 +1,25 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
-import uvicorn
+import sqlite3
+from datetime import datetime
 
-app = FastAPI(title="Invoice Submission API (Mocked)")
+app = FastAPI()
 
-# ✅ Item Schema
-class Item(BaseModel):
-    itemCd: str
-    itemNm: str
-    qty: int
-    prc: float
-    taxblAmt: float
-    taxAmt: float
-    totAmt: float
+# ---- DB Setup ----
+conn = sqlite3.connect("invoices.db", check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS responses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoiceId TEXT,
+    status TEXT,
+    message TEXT,
+    timestamp TEXT
+)
+""")
+conn.commit()
 
-# ✅ Invoice Schema
+# ---- Models ----
 class Invoice(BaseModel):
     tpin: str
     bhfId: str
@@ -25,36 +29,61 @@ class Invoice(BaseModel):
     invoiceType: str
     transactionType: str
     paymentType: str
-    customerTpin: str = None
-    customerNm: str = None
+    customerTpin: str
+    customerNm: str
     totalItemCnt: int
-    items: List[Item]
+    items: list
     totTaxblAmt: float
     totTaxAmt: float
     totAmt: float
 
-# ✅ Always succeed
+# ---- Helper ----
+def save_response(invoiceId, status, message):
+    timestamp = datetime.utcnow().isoformat()
+    cursor.execute(
+        "INSERT INTO responses (invoiceId, status, message, timestamp) VALUES (?,?,?,?)",
+        (invoiceId, status, message, timestamp),
+    )
+    conn.commit()
+
+# ---- Endpoints ----
 @app.post("/api/invoices/submit")
-async def submit_invoice(invoice: Invoice):
-    return {
+def submit_invoice(invoice: Invoice):
+    response = {
         "status": "success",
         "message": "Invoice submitted successfully to Tax Authority.",
         "authorityReferenceId": "TA_REF_123456",
         "invoiceId": invoice.invcNo
     }
+    save_response(invoice.invcNo, "success", response["message"])
+    return response
 
-# ❌ Always fail with HTTP 400
 @app.post("/api/invoices/fail")
-async def fail_invoice(invoice: Invoice):
-    raise HTTPException(
-        status_code=400,
-        detail={
+def fail_invoice(invoice: Invoice):
+    response = {
+        "detail": {
             "status": "failed",
             "message": "Invoice rejected by Tax Authority.",
             "errorCode": "TA_ERR_400",
             "invoiceId": invoice.invcNo
         }
-    )
+    }
+    save_response(invoice.invcNo, "failed", response["detail"]["message"])
+    raise HTTPException(status_code=400, detail=response["detail"])
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+@app.get("/api/invoices/responses")
+def get_responses():
+    cursor.execute("SELECT invoiceId, status, message, timestamp FROM responses")
+    rows = cursor.fetchall()
+    return [
+        {"invoiceId": r[0], "status": r[1], "message": r[2], "timestamp": r[3]}
+        for r in rows
+    ]
+
+@app.get("/api/invoices/responses/{invoiceId}")
+def get_response(invoiceId: str):
+    cursor.execute("SELECT invoiceId, status, message, timestamp FROM responses WHERE invoiceId=?", (invoiceId,))
+    row = cursor.fetchone()
+    if row:
+        return {"invoiceId": row[0], "status": row[1], "message": row[2], "timestamp": row[3]}
+    raise HTTPException(status_code=404, detail="Invoice response not found")
