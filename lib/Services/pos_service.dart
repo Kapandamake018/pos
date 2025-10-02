@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../Models/product_model.dart';
+import '../models/product_model.dart';
 import '../config/api_config.dart';
 import 'auth_service.dart';
 
@@ -14,7 +14,7 @@ class APIException implements Exception {
   String toString() => 'APIException: $message (Status: $statusCode)';
 }
 
-class POSService {
+class PosService {
   final AuthService _authService = AuthService();
   
   Future<http.Response> _authenticatedRequest(
@@ -74,42 +74,20 @@ class POSService {
         await _authService.saveToken(token);
         return token;
       } else {
-        throw APIException(
-          'Login failed: ${json.decode(response.body)['detail']}',
-          response.statusCode
-        );
+        throw Exception('Login failed: ${response.statusCode}');
       }
     } catch (e) {
-      throw APIException('Login error: ${e.toString()}');
+      throw Exception('Login error: $e');
     }
   }
 
   Future<List<Product>> getProducts() async {
-    final response = await _authenticatedRequest(ApiConfig.products);
+    final response = await _authenticatedRequest('/api/products');
     
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Product.fromJson(json)).toList();
     }
-    
-    throw APIException(
-      'Failed to load products: ${json.decode(response.body)['detail']}',
-      response.statusCode
-    );
-  }
-
-  Future<Map<String, dynamic>> getDailySales(String date) async {
-    final response = await _authenticatedRequest(
-      '${ApiConfig.dailySales}?date_str=$date'
-    );
-    
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    }
-    
-    throw APIException(
-      'Failed to load sales report: ${json.decode(response.body)['detail']}',
-      response.statusCode
-    );
+    throw Exception('Failed to load products');
   }
 }

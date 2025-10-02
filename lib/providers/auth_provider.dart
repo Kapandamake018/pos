@@ -4,7 +4,7 @@ import '../Services/pos_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
-  final POSService _posService = POSService();
+  final PosService _posService = PosService();
   bool _isAuthenticated = false;
 
   bool get isAuthenticated => _isAuthenticated;

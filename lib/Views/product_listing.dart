@@ -5,8 +5,16 @@ import '../Models/cart_item_model.dart';
 import '../Models/product_model.dart';
 import 'reporting_screen.dart'; // Add this import
 
-class ProductListingScreen extends StatelessWidget {
-  const ProductListingScreen({super.key});
+class ProductListingScreen extends StatefulWidget {
+  const ProductListingScreen({Key? key}) : super(key: key);
+
+  @override
+  _ProductListingScreenState createState() => _ProductListingScreenState();
+}
+
+class _ProductListingScreenState extends State<ProductListingScreen> {
+  final PosService _posService = PosService();
+  List<Product> _products = [];
 
   @override
   Widget build(BuildContext context) {
