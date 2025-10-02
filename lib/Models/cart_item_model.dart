@@ -1,9 +1,9 @@
 // lib/models/cart_item_model.dart
 
-import 'product_model.dart';
+import '../Models/product_model.dart';
 
 class CartItem {
-  final Product product;
+  final ProductModel product;
   int quantity;
 
   CartItem({required this.product, this.quantity = 1});
