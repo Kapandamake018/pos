@@ -1,26 +1,35 @@
-class ProductModel {
+import 'package:flutter/foundation.dart';
+
+class Product {
   final int id;
   final String name;
   final String? description;
   final double price;
   final int stock;
-  final String? imageUrl;
 
-  ProductModel({
+  const Product({
     required this.id,
     required this.name,
     this.description,
     required this.price,
     required this.stock,
-    this.imageUrl,
   });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) => ProductModel(
-    id: json['id'],
-    name: json['name'],
-    description: json['description'],
-    price: json['price'].toDouble(),
-    stock: json['stock'],
-    imageUrl: json['imageUrl'], // Backend doesn't provide, but Student A expects it
-  );
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      price: (json['price'] as num).toDouble(),
+      stock: json['stock'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'price': price,
+    'stock': stock,
+  };
 }

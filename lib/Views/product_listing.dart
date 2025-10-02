@@ -6,55 +6,64 @@ import '../Models/product_model.dart';
 import 'reporting_screen.dart'; // Add this import
 
 class ProductListingScreen extends StatefulWidget {
-  const ProductListingScreen({Key? key}) : super(key: key);
+  const ProductListingScreen({super.key});
 
   @override
-  _ProductListingScreenState createState() => _ProductListingScreenState();
+  State<ProductListingScreen> createState() => _ProductListingScreenState();
 }
 
 class _ProductListingScreenState extends State<ProductListingScreen> {
-  final PosService _posService = PosService();
-  List<Product> _products = [];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch products when screen loads
+    Future.microtask(() => 
+      context.read<PosService>().fetchProducts()
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Fetch products on screen load
-    Provider.of<PosService>(context, listen: false).fetchProducts();
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    return Consumer<PosService>(
+      builder: (context, posService, child) {
+        final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mpepo Kitchen POS'),
-        backgroundColor: Colors.deepOrange,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.assessment),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ReportingScreen()),
-              );
-            },
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Mpepo Kitchen POS'),
+            backgroundColor: Colors.deepOrange,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.assessment),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ReportingScreen()),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: isMobile
-          ? ProductGridView()
-          : Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(flex: 3, child: ProductGridView()),
-          Expanded(flex: 2, child: CartView()),
-        ],
-      ),
-      floatingActionButton: isMobile
-          ? FloatingActionButton.extended(
-        onPressed: () => _showCartDialog(context),
-        label: Text('View Cart (${context.watch<PosService>().cart.length})'),
-        icon: Icon(Icons.shopping_cart),
-        backgroundColor: Colors.deepOrange,
-      )
-          : null,
+          body: isMobile
+              ? ProductGridView()
+              : Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 3, child: ProductGridView()),
+              Expanded(flex: 2, child: CartView()),
+            ],
+          ),
+          floatingActionButton: isMobile
+              ? FloatingActionButton.extended(
+            onPressed: () => _showCartDialog(context),
+            label: Text('View Cart (${context.watch<PosService>().cart.length})'),
+            icon: Icon(Icons.shopping_cart),
+            backgroundColor: Colors.deepOrange,
+          )
+              : null,
+          bottomSheet: _buildCartSummary(posService),
+        );
+      },
     );
   }
 
@@ -71,6 +80,89 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
             child: CartView(),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCartSummary(PosService posService) {
+    return Container(
+      color: Colors.grey[100],
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Shopping Cart',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const Divider(),
+          if (posService.cart.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 64.0),
+              child: Center(child: Text('Your cart is empty.')),
+            )
+          else
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: posService.cart.length,
+                itemBuilder: (context, index) {
+                  final cartItem = posService.cart[index];
+                  return CartListItem(cartItem: cartItem);
+                },
+              ),
+            ),
+          const Divider(),
+          CalculationSummary(),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: posService.cart.isEmpty
+                ? null
+                : () {
+              // Show checkout confirmation
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Checkout'),
+                  content: Text(
+                      'Total: K${posService.total.toStringAsFixed(2)}\n\n'
+                          'Items: ${posService.cart.length}\n'
+                          'Subtotal: K${posService.subtotal.toStringAsFixed(2)}\n'
+                          'Discount: -K${posService.discountValue.toStringAsFixed(2)}\n'
+                          'Tax: +K${posService.taxValue.toStringAsFixed(2)}'
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Clear cart and close dialog
+                        posService.clearCart();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Checkout successful!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            child: const Text('Checkout', style: TextStyle(fontSize: 18)),
+          ),
+        ],
       ),
     );
   }

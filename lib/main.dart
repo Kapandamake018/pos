@@ -3,15 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'Services/pos_service.dart';
-import 'Views/product_listing.dart';
+import 'Views/login_screen.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: MyApp(),
+    ChangeNotifierProvider(
+      create: (_) => PosService(),
+      child: const MyApp(),
     ),
   );
 }
@@ -28,10 +26,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepOrange,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-
       ),
       debugShowCheckedModeBanner: false,
-      home: const ProductListingScreen(),
+      home: const LoginScreen(),
     );
   }
 }
