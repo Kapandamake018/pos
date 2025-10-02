@@ -1,0 +1,440 @@
+openapi: 3.0.3
+info:
+  title: Mpepo Kitchen POS Backend API
+  description: |
+    Backend API for Mpepo Kitchen Point-of-Sale system with ZRA e-invoicing integration.
+    
+    **Authentication**: Most endpoints require JWT Bearer token authentication.
+    Use the `/login` endpoint to obtain a token.
+    
+    **Student C Contributions**:
+    - Authentication system
+    - Product CRUD endpoints
+    - Reporting endpoints
+    - Database schema and seed data
+  version: 1.0.0
+  contact:
+    name: Student C
+    email: student-c@example.com
+
+servers:
+  - url: http://127.0.0.1:8000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Products
+    description: Product management (CRUD operations)
+  - name: Reports
+    description: Sales and tax reporting
+  - name: Invoices
+    description: Invoice submission and logs
+  - name: Health
+    description: Health check endpoints
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Nshima with Chicken"
+        description:
+          type: string
+          example: "Traditional Zambian meal"
+        price:
+          type: number
+          format: float
+          example: 45.00
+        stock:
+          type: integer
+          example: 50
+      required:
+        - name
+        - price
+        - stock
+    
+    ProductCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Nshima with Chicken"
+        description:
+          type: string
+          example: "Traditional Zambian meal"
+        price:
+          type: number
+          format: float
+          example: 45.00
+        stock:
+          type: integer
+          example: 50
+      required:
+        - name
+        - price
+        - stock
+    
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        stock:
+          type: integer
+    
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "admin"
+        password:
+          type: string
+          example: "password"
+      required:
+        - username
+        - password
+    
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          example: "bearer"
+    
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Error message"
+
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns a simple message to confirm the API is running
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Mpepo Kitchen POS Backend is running!"
+  
+  /test-db:
+    get:
+      tags:
+        - Health
+      summary: Test database connection
+      description: Checks database connectivity and returns product count
+      responses:
+        '200':
+          description: Database connected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  product_count:
+                    type: integer
+  
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /protected-test:
+    get:
+      tags:
+        - Authentication
+      summary: Test protected endpoint
+      description: Validates JWT token
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+  
+  /api/products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: Retrieve a list of all products
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    
+    post:
+      tags:
+        - Products
+      summary: Create new product
+      description: Add a new product to the inventory
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '200':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+  
+  /api/products/{product_id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      description: Retrieve a single product by its ID
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+    
+    put:
+      tags:
+        - Products
+      summary: Update product
+      description: Update an existing product
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+        '401':
+          description: Unauthorized
+    
+    delete:
+      tags:
+        - Products
+      summary: Delete product
+      description: Remove a product from inventory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: integer
+        '404':
+          description: Product not found
+        '401':
+          description: Unauthorized
+  
+  /reports/sales:
+    get:
+      tags:
+        - Reports
+      summary: Get sales report
+      description: Retrieve aggregated sales data
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Sales report generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_invoices:
+                    type: integer
+                  total_sales:
+                    type: number
+                  total_tax:
+                    type: number
+                  generated_by:
+                    type: string
+        '401':
+          description: Unauthorized
+  
+  /api/reports/daily-sales:
+    get:
+      tags:
+        - Reports
+      summary: Get daily sales report
+      description: Retrieve sales data for a specific date
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: date_str
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2025-10-01"
+      responses:
+        '200':
+          description: Daily sales report
+        '401':
+          description: Unauthorized
+  
+  /api/reports/tax:
+    get:
+      tags:
+        - Reports
+      summary: Get tax report
+      description: Retrieve tax data for a specific date
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: date_str
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2025-10-01"
+      responses:
+        '200':
+          description: Tax report
+        '401':
+          description: Unauthorized
+  
+  /api/invoices/logs/{cis_invc_no}:
+    get:
+      tags:
+        - Invoices
+      summary: Get invoice log
+      description: Retrieve stored invoice submission response
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cis_invc_no
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "INV-001"
+      responses:
+        '200':
+          description: Invoice log found
+        '404':
+          description: Log not found
+        '401':
+          description: Unauthorized
