@@ -16,31 +16,39 @@ from typing import Optional
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from pathlib import Path
 
 load_dotenv()
+
+# Ensure logs dir exists and configure logging safely
+logs_dir = Path(__file__).parent / "logs"
+logs_dir.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(f'logs/app-{datetime.now().strftime("%Y%m%d")}.log'),
+        logging.FileHandler(str(logs_dir / f'app-{datetime.now().strftime("%Y%m%d")}.log')),
         logging.StreamHandler()
     ]
 )
 
 # Initialize database and create tables
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///C:/projects/pos/backend/pos.db")
-engine = create_engine(DATABASE_URL, echo=True)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL, echo=True)
+
 SQLModel.metadata.create_all(engine)
 
 app = FastAPI(title="Mpepo POS Backend", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Flutter web
-        "http://localhost:8000",  # Development
-        "http://10.0.2.2:8000",  # Android emulator
-    ],
+    allow_origins=["*"],  # Dev only. Lock down in prod.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -129,7 +137,7 @@ def login(login: Login):
         raise HTTPException(status_code=400, detail="Invalid credentials")
     token = jwt.encode(
         {"sub": login.username, "exp": datetime.utcnow() + timedelta(hours=1)},
-        os.getenv("SECRET_KEY"),
+        SECRET_KEY,
         algorithm="HS256"
     )
     return {"access_token": token, "token_type": "bearer"}
@@ -214,7 +222,7 @@ def delete_product(
     return {"message": "Product deleted successfully", "id": product_id}
 
 # Reporting Endpoints (Student C)
-@app.get("/reports/sales")
+@app.get("/api/reports/sales")
 def get_sales_report(db: Session = Depends(get_db), payload: dict = Depends(validate_token)):
     """Get aggregated sales report (requires authentication)"""
     result = db.exec(

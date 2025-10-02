@@ -1,12 +1,14 @@
 // lib/models/cart_item_model.dart
 
-import '../Models/product_model.dart';
+import 'product_model.dart';
 
 class CartItem {
-  final ProductModel product;
+  final Product product;
   int quantity;
 
-  CartItem({required this.product, this.quantity = 1});
+  CartItem({
+    required this.product,
+  }) : quantity = 1;
 
-  double get totalPrice => product.price * quantity;
+  double get total => product.price * quantity;
 }

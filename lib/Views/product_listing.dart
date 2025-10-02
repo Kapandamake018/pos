@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../Services/pos_service.dart';
 import '../Models/cart_item_model.dart';
 import '../Models/product_model.dart';
-import 'reporting_screen.dart'; // Add this import
 
 class ProductListingScreen extends StatefulWidget {
   const ProductListingScreen({super.key});
@@ -16,151 +15,78 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch products when screen loads
-    Future.microtask(() => 
-      context.read<PosService>().fetchProducts()
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await context.read<PosService>().fetchProducts();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<PosService>(
-      builder: (context, posService, child) {
-        final isMobile = MediaQuery.of(context).size.width < 600;
+      builder: (context, pos, _) {
+        if (pos.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Mpepo Kitchen POS'),
-            backgroundColor: Colors.deepOrange,
+            title: const Text('Products'),
             actions: [
               IconButton(
-                icon: const Icon(Icons.assessment),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ReportingScreen()),
-                  );
-                },
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: () => _showCart(context, pos),
               ),
             ],
           ),
-          body: isMobile
-              ? ProductGridView()
-              : Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 3, child: ProductGridView()),
-              Expanded(flex: 2, child: CartView()),
-            ],
+          body: ListView.builder(
+            itemCount: pos.catalog.length,
+            itemBuilder: (context, index) {
+              final Product product = pos.catalog[index];
+              return ListTile(
+                title: Text(product.name),
+                subtitle: Text('ZMW ${product.price.toStringAsFixed(2)}'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.add_shopping_cart),
+                  onPressed: () => pos.addToCart(product),
+                ),
+              );
+            },
           ),
-          floatingActionButton: isMobile
-              ? FloatingActionButton.extended(
-            onPressed: () => _showCartDialog(context),
-            label: Text('View Cart (${context.watch<PosService>().cart.length})'),
-            icon: Icon(Icons.shopping_cart),
-            backgroundColor: Colors.deepOrange,
-          )
-              : null,
-          bottomSheet: _buildCartSummary(posService),
+          bottomNavigationBar: _CartSummaryBar(pos: pos),
         );
       },
     );
   }
 
-  void _showCartDialog(BuildContext context) {
+  void _showCart(BuildContext context, PosService pos) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        builder: (_, controller) => ChangeNotifierProvider.value(
-          value: Provider.of<PosService>(context, listen: false),
-          child: SingleChildScrollView(
-            controller: controller,
-            child: CartView(),
-          ),
-        ),
-      ),
+      builder: (_) => _CartSheet(pos: pos),
     );
   }
+}
 
-  Widget _buildCartSummary(PosService posService) {
+class _CartSummaryBar extends StatelessWidget {
+  final PosService pos;
+  const _CartSummaryBar({required this.pos});
+
+  @override
+  Widget build(BuildContext context) {
+    final itemCount = pos.cart.length;
     return Container(
-      color: Colors.grey[100],
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.all(12),
+      child: Row(
         children: [
-          Text(
-            'Shopping Cart',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const Divider(),
-          if (posService.cart.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 64.0),
-              child: Center(child: Text('Your cart is empty.')),
-            )
-          else
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: posService.cart.length,
-                itemBuilder: (context, index) {
-                  final cartItem = posService.cart[index];
-                  return CartListItem(cartItem: cartItem);
-                },
-              ),
-            ),
-          const Divider(),
-          CalculationSummary(),
-          const SizedBox(height: 16),
+          Text('Items: $itemCount'),
+          const Spacer(),
+          Text('Total: ZMW ${pos.total.toStringAsFixed(2)}'),
+          const SizedBox(width: 8),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: posService.cart.isEmpty
-                ? null
-                : () {
-              // Show checkout confirmation
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Checkout'),
-                  content: Text(
-                      'Total: K${posService.total.toStringAsFixed(2)}\n\n'
-                          'Items: ${posService.cart.length}\n'
-                          'Subtotal: K${posService.subtotal.toStringAsFixed(2)}\n'
-                          'Discount: -K${posService.discountValue.toStringAsFixed(2)}\n'
-                          'Tax: +K${posService.taxValue.toStringAsFixed(2)}'
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Clear cart and close dialog
-                        posService.clearCart();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Checkout successful!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      child: const Text('Confirm'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            child: const Text('Checkout', style: TextStyle(fontSize: 18)),
+            onPressed: itemCount == 0 ? null : () {},
+            child: const Text('Checkout'),
           ),
         ],
       ),
@@ -168,293 +94,90 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
   }
 }
 
-class ProductGridView extends StatelessWidget {
-  const ProductGridView({super.key});
+class _CartSheet extends StatelessWidget {
+  final PosService pos;
+  const _CartSheet({required this.pos});
 
   @override
   Widget build(BuildContext context) {
-    final posService = Provider.of<PosService>(context);
-
-    if (posService.catalog.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16.0),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        childAspectRatio: 2 / 3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: posService.catalog.length,
-      itemBuilder: (context, index) {
-        final product = posService.catalog[index];
-        return ProductCard(product: product);
-      },
-    );
-  }
-}
-
-class ProductCard extends StatelessWidget {
-  final ProductModel product;
-  const ProductCard({super.key, required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4.0,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: product.imageUrl != null
-                ? Image.network(
-              product.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => _placeholderImage(),
-            )
-                : _placeholderImage(),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              product.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              'K${product.price.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              'Stock: ${product.stock}',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Provider.of<PosService>(context, listen: false).addToCart(product);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${product.name} added to cart.'),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-              },
-              child: const Text('Add to Cart'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _placeholderImage() {
-    return Container(
-      color: Colors.grey[300],
-      child: const Center(child: Text('No Image')),
-    );
-  }
-}
-
-class CartView extends StatelessWidget {
-  const CartView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final posService = context.watch<PosService>();
-
-    return Container(
-      color: Colors.grey[100],
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Shopping Cart',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const Divider(),
-          if (posService.cart.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 64.0),
-              child: Center(child: Text('Your cart is empty.')),
-            )
-          else
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: posService.cart.length,
-                itemBuilder: (context, index) {
-                  final cartItem = posService.cart[index];
-                  return CartListItem(cartItem: cartItem);
-                },
-              ),
-            ),
-          const Divider(),
-          CalculationSummary(),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: posService.cart.isEmpty
-                ? null
-                : () {
-              // Show checkout confirmation
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Checkout'),
-                  content: Text(
-                      'Total: K${posService.total.toStringAsFixed(2)}\n\n'
-                          'Items: ${posService.cart.length}\n'
-                          'Subtotal: K${posService.subtotal.toStringAsFixed(2)}\n'
-                          'Discount: -K${posService.discountValue.toStringAsFixed(2)}\n'
-                          'Tax: +K${posService.taxValue.toStringAsFixed(2)}'
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Clear cart and close dialog
-                        posService.clearCart();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Checkout successful!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      child: const Text('Confirm'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            child: const Text('Checkout', style: TextStyle(fontSize: 18)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class CartListItem extends StatelessWidget {
-  final CartItem cartItem;
-  const CartListItem({super.key, required this.cartItem});
-
-  @override
-  Widget build(BuildContext context) {
-    final posService = Provider.of<PosService>(context, listen: false);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
-      child: ListTile(
-        leading: cartItem.product.imageUrl != null
-            ? Image.network(
-          cartItem.product.imageUrl!,
-          width: 50,
-          height: 50,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _placeholderImage(),
-        )
-            : _placeholderImage(),
-        title: Text(cartItem.product.name),
-        subtitle: Text('K${cartItem.product.price.toStringAsFixed(2)}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
           children: [
-            IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
-                onPressed: () => posService.decrementQuantity(cartItem)),
-            Text('${cartItem.quantity}', style: Theme.of(context).textTheme.titleMedium),
-            IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => posService.incrementQuantity(cartItem)),
+            ListTile(
+              title: const Text('Your Cart'),
+              trailing: IconButton(
+                icon: const Icon(Icons.clear_all),
+                onPressed: pos.clearCart,
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: pos.cart.isEmpty
+                  ? const Center(child: Text('Cart is empty'))
+                  : ListView.builder(
+                      itemCount: pos.cart.length,
+                      itemBuilder: (_, i) {
+                        final CartItem item = pos.cart[i];
+                        return ListTile(
+                          title: Text(item.product.name),
+                          subtitle: Text(
+                              'Qty: ${item.quantity} • ZMW ${item.total.toStringAsFixed(2)}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove),
+                                onPressed: () => pos.decrementQuantity(item),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add),
+                                onPressed: () => pos.incrementQuantity(item),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  _Row('Subtotal', pos.subtotal),
+                  _Row('Discount', -pos.discountValue),
+                  _Row('Tax', pos.taxValue),
+                  const Divider(),
+                  _Row('Total', pos.total, isBold: true),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _placeholderImage() {
-    return Container(
-      width: 50,
-      height: 50,
-      color: Colors.grey[300],
-      child: const Center(child: Text('No Image')),
-    );
-  }
 }
 
-class CalculationSummary extends StatelessWidget {
-  const CalculationSummary({super.key});
+class _Row extends StatelessWidget {
+  final String label;
+  final double value;
+  final bool isBold;
+  const _Row(this.label, this.value, {this.isBold = false});
 
   @override
   Widget build(BuildContext context) {
-    final posService = context.watch<PosService>();
-
-    return Column(
+    final style = isBold
+        ? Theme.of(context).textTheme.titleMedium
+        : Theme.of(context).textTheme.bodyMedium;
+    return Row(
       children: [
-        _buildSummaryRow('Subtotal:', 'K${posService.subtotal.toStringAsFixed(2)}'),
-        _buildSummaryRow('Discount (10%):', '-K${posService.discountValue.toStringAsFixed(2)}'),
-        _buildSummaryRow('Tax (8%):', '+K${posService.taxValue.toStringAsFixed(2)}'),
-        const Divider(),
-        _buildSummaryRow(
-          'Total:',
-          'K${posService.total.toStringAsFixed(2)}',
-          isTotal: true,
-        ),
+        Text(label, style: style),
+        const Spacer(),
+        Text('ZMW ${value.toStringAsFixed(2)}', style: style),
       ],
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isTotal ? 18 : 16,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isTotal ? 18 : 16,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
