@@ -1,45 +1,51 @@
-// lib/Views/product_listing.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../Services/pos_service.dart';
 import '../Models/cart_item_model.dart';
 import '../Models/product_model.dart';
+import 'reporting_screen.dart'; // Add this import
 
 class ProductListingScreen extends StatelessWidget {
   const ProductListingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Fetch products on screen load
+    Provider.of<PosService>(context, listen: false).fetchProducts();
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mpepo Kitchen POS'),
         backgroundColor: Colors.deepOrange,
-      ),
-      body: isMobile
-          ? ProductGridView() // Show only products on mobile, cart is a separate screen/dialog
-          : Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: ProductGridView(),
-          ),
-          Expanded(
-            flex: 2,
-            child: CartView(),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.assessment),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ReportingScreen()),
+              );
+            },
           ),
         ],
       ),
+      body: isMobile
+          ? ProductGridView()
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: ProductGridView()),
+                Expanded(flex: 2, child: CartView()),
+              ],
+            ),
       floatingActionButton: isMobile
           ? FloatingActionButton.extended(
-        onPressed: () => _showCartDialog(context),
-        label: Text('View Cart (${context.watch<PosService>().cart.length})'),
-        icon: Icon(Icons.shopping_cart),
-        backgroundColor: Colors.deepOrange,
-      )
+              onPressed: () => _showCartDialog(context),
+              label: Text('View Cart (${context.watch<PosService>().cart.length})'),
+              icon: Icon(Icons.shopping_cart),
+              backgroundColor: Colors.deepOrange,
+            )
           : null,
     );
   }
@@ -69,6 +75,10 @@ class ProductGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     final posService = Provider.of<PosService>(context);
 
+    if (posService.catalog.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return GridView.builder(
       padding: const EdgeInsets.all(16.0),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -87,7 +97,7 @@ class ProductGridView extends StatelessWidget {
 }
 
 class ProductCard extends StatelessWidget {
-  final Product product;
+  final ProductModel product;
   const ProductCard({super.key, required this.product});
 
   @override
@@ -100,10 +110,13 @@ class ProductCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Image.network(
-              product.imageUrl,
-              fit: BoxFit.cover,
-            ),
+            child: product.imageUrl != null
+                ? Image.network(
+                    product.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => _placeholderImage(),
+                  )
+                : _placeholderImage(),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -118,6 +131,13 @@ class ProductCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
               'K${product.price.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              'Stock: ${product.stock}',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey[700]),
             ),
           ),
@@ -144,6 +164,13 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _placeholderImage() {
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(child: Text('No Image')),
+    );
+  }
 }
 
 class CartView extends StatelessWidget {
@@ -158,7 +185,6 @@ class CartView extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -167,19 +193,13 @@ class CartView extends StatelessWidget {
           ),
           const Divider(),
           if (posService.cart.isEmpty)
-
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 64.0),
-              child: Center(
-                child: Text('Your cart is empty.'),
-              ),
+              child: Center(child: Text('Your cart is empty.')),
             )
           else
-
-          // Flexible allows the ListView to shrink and not cause an overflow.
             Flexible(
               child: ListView.builder(
-
                 shrinkWrap: true,
                 itemCount: posService.cart.length,
                 itemBuilder: (context, index) {
@@ -217,7 +237,15 @@ class CartListItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: ListTile(
-        leading: Image.network(cartItem.product.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
+        leading: cartItem.product.imageUrl != null
+            ? Image.network(
+                cartItem.product.imageUrl!,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => _placeholderImage(),
+              )
+            : _placeholderImage(),
         title: Text(cartItem.product.name),
         subtitle: Text('K${cartItem.product.price.toStringAsFixed(2)}'),
         trailing: Row(
@@ -235,6 +263,15 @@ class CartListItem extends StatelessWidget {
       ),
     );
   }
+
+  Widget _placeholderImage() {
+    return Container(
+      width: 50,
+      height: 50,
+      color: Colors.grey[300],
+      child: const Center(child: Text('No Image')),
+    );
+  }
 }
 
 class CalculationSummary extends StatelessWidget {
@@ -246,9 +283,9 @@ class CalculationSummary extends StatelessWidget {
 
     return Column(
       children: [
-        _buildSummaryRow('Subtotal:', 'k${posService.subtotal.toStringAsFixed(2)}'),
-        _buildSummaryRow('Discount (10%):', '-k${posService.discountValue.toStringAsFixed(2)}'),
-        _buildSummaryRow('Tax (8%):', '+k${posService.taxValue.toStringAsFixed(2)}'),
+        _buildSummaryRow('Subtotal:', 'K${posService.subtotal.toStringAsFixed(2)}'),
+        _buildSummaryRow('Discount (10%):', '-K${posService.discountValue.toStringAsFixed(2)}'),
+        _buildSummaryRow('Tax (8%):', '+K${posService.taxValue.toStringAsFixed(2)}'),
         const Divider(),
         _buildSummaryRow(
           'Total:',
