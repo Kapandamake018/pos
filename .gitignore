@@ -1,20 +1,3 @@
-<<<<<<< HEAD
-backend/.env
-backend/pos.db
-backend/__pycache__/
-backend/*.pyc
-venv/
-# Ignore Python cache files
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-backend/models/__pycache__
-backend/services/__pycache__
-# Ignore virtual environments
-venv/
-.env
-=======
 # Miscellaneous
 *.class
 *.log
@@ -60,4 +43,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
->>>>>>> origin/student-a-frontend
+
+backend/.env
+backend/pos.db
+backend/__pycache__/
+backend/*.pyc
+venv/
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+backend/models/__pycache__
+backend/services/__pycache__
+# Ignore virtual environments
+venv/
+.env
