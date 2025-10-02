@@ -217,7 +217,44 @@ class CartView extends StatelessWidget {
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
-            onPressed: posService.cart.isEmpty ? null : () { /* Checkout Logic */ },
+            onPressed: posService.cart.isEmpty
+                ? null
+                : () {
+              // Show checkout confirmation
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Checkout'),
+                  content: Text(
+                      'Total: K${posService.total.toStringAsFixed(2)}\n\n'
+                          'Items: ${posService.cart.length}\n'
+                          'Subtotal: K${posService.subtotal.toStringAsFixed(2)}\n'
+                          'Discount: -K${posService.discountValue.toStringAsFixed(2)}\n'
+                          'Tax: +K${posService.taxValue.toStringAsFixed(2)}'
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Clear cart and close dialog
+                        posService.clearCart();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Checkout successful!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      child: const Text('Confirm'),
+                    ),
+                  ],
+                ),
+              );
+            },
             child: const Text('Checkout', style: TextStyle(fontSize: 18)),
           ),
         ],
