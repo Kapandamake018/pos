@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     const seed = Colors.deepOrange;
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Mpepo POS',
       themeMode: ThemeMode.light,
       theme: ThemeData(
