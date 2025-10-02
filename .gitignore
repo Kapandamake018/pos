@@ -3,7 +3,13 @@ backend/pos.db
 backend/__pycache__/
 backend/*.pyc
 venv/
-_pycache_/
-*.pyc
-models/__pycache__
-services/__pycache__
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+backend/models/__pycache__
+backend/services/__pycache__
+# Ignore virtual environments
+venv/
+.env
