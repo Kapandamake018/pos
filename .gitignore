@@ -59,3 +59,14 @@ backend/services/__pycache__
 # Ignore virtual environments
 venv/
 .env
+
+
+# Platform-specific generated files
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.*
+macos/Flutter/GeneratedPluginRegistrant.swift
+windows/flutter/generated_plugin_registrant.*
+windows/flutter/generated_plugins.cmake
+linux/flutter/generated_plugin_registrant.*
+linux/flutter/generated_plugins.cmake
