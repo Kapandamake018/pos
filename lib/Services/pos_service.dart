@@ -1,143 +1,115 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../Models/product_model.dart';
-import '../Models/cart_item_model.dart';
+import '../config/api_config.dart';
+import 'auth_service.dart';
 
-class PosService extends ChangeNotifier {
-  // --- Backend Integration ---
-  String? _accessToken;
-  Map<String, dynamic>? _salesReport;
-  Map<String, dynamic>? _dailySalesReport;
-  Map<String, dynamic>? _taxReport;
-  List<ProductModel> _products = [];
-  final String _baseUrl = 'http://192.168.30.28';  // Emulator alias for localhost
+class APIException implements Exception {
+  final String message;
+  final int? statusCode;
 
-  String? get accessToken => _accessToken;
-  Map<String, dynamic>? get salesReport => _salesReport;
-  Map<String, dynamic>? get dailySalesReport => _dailySalesReport;
-  Map<String, dynamic>? get taxReport => _taxReport;
-  List<ProductModel> get catalog => _products;
+  APIException(this.message, [this.statusCode]);
 
-  Future<void> login(String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
-    if (response.statusCode == 200) {
-      _accessToken = jsonDecode(response.body)['access_token'];
-      notifyListeners();
-    } else {
-      throw Exception('Login failed: ${response.statusCode}');
+  @override
+  String toString() => 'APIException: $message (Status: $statusCode)';
+}
+
+class POSService {
+  final AuthService _authService = AuthService();
+  
+  Future<http.Response> _authenticatedRequest(
+    String endpoint,
+    {
+      String method = 'GET',
+      Map<String, dynamic>? body,
     }
-  }
+  ) async {
+    final token = await _authService.getToken();
+    final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    final headers = ApiConfig.getHeaders(token);
 
-  Future<void> fetchProducts() async {
-    final response = await http.get(Uri.parse('$_baseUrl/api/products'));
-    if (response.statusCode == 200) {
-      _products = (jsonDecode(response.body) as List)
-          .map((data) => ProductModel.fromJson(data))
-          .toList();
-      notifyListeners();
-    } else {
-      throw Exception('Failed to load products: ${response.statusCode}');
-    }
-  }
-
-  Future<void> fetchSalesReport() async {
-    if (_accessToken == null) await login('admin', 'password');
-    final response = await http.get(
-      Uri.parse('$_baseUrl/reports/sales'),
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response.statusCode == 200) {
-      _salesReport = jsonDecode(response.body);
-      notifyListeners();
-    } else {
-      throw Exception('Failed to load sales report: ${response.statusCode}');
-    }
-  }
-
-  Future<void> fetchDailySalesReport(String date) async {
-    if (_accessToken == null) await login('admin', 'password');
-    final response = await http.get(
-      Uri.parse('$_baseUrl/api/reports/daily-sales?date_str=$date'),
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response.statusCode == 200) {
-      _dailySalesReport = jsonDecode(response.body);
-      notifyListeners();
-    } else {
-      throw Exception('Failed to load daily sales report: ${response.statusCode}');
-    }
-  }
-
-  Future<void> fetchTaxReport(String date) async {
-    if (_accessToken == null) await login('admin', 'password');
-    final response = await http.get(
-      Uri.parse('$_baseUrl/api/reports/tax?date_str=$date'),
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response.statusCode == 200) {
-      _taxReport = jsonDecode(response.body);
-      notifyListeners();
-    } else {
-      throw Exception('Failed to load tax report: ${response.statusCode}');
-    }
-  }
-
-  // --- Cart Management (Student A's Logic) ---
-  final List<CartItem> _cart = [];
-  List<CartItem> get cart => _cart;
-
-  void addToCart(ProductModel product) {
-    for (var item in _cart) {
-      if (item.product.id == product.id) {
-        item.quantity++;
-        notifyListeners();
-        return;
+    try {
+      late http.Response response;
+      
+      switch (method) {
+        case 'GET':
+          response = await http.get(uri, headers: headers);
+          break;
+        case 'POST':
+          response = await http.post(
+            uri, 
+            headers: headers,
+            body: json.encode(body),
+          );
+          break;
+        default:
+          throw APIException('Unsupported HTTP method: $method');
       }
+
+      if (response.statusCode == 401) {
+        await _authService.deleteToken();
+        throw APIException('Authentication expired', response.statusCode);
+      }
+
+      return response;
+    } catch (e) {
+      if (e is APIException) rethrow;
+      throw APIException('Network error: ${e.toString()}');
     }
-    _cart.add(CartItem(product: product));
-    notifyListeners();
   }
 
-  void removeFromCart(CartItem cartItem) {
-    _cart.remove(cartItem);
-    notifyListeners();
-  }
+  Future<String> login(String username, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.login}'),
+        headers: ApiConfig.getHeaders(),
+        body: json.encode({
+          'username': username,
+          'password': password,
+        }),
+      );
 
-  void incrementQuantity(CartItem cartItem) {
-    cartItem.quantity++;
-    notifyListeners();
-  }
-
-  void decrementQuantity(CartItem cartItem) {
-    if (cartItem.quantity > 1) {
-      cartItem.quantity--;
-    } else {
-      removeFromCart(cartItem);
+      if (response.statusCode == 200) {
+        final token = json.decode(response.body)['access_token'];
+        await _authService.saveToken(token);
+        return token;
+      } else {
+        throw APIException(
+          'Login failed: ${json.decode(response.body)['detail']}',
+          response.statusCode
+        );
+      }
+    } catch (e) {
+      throw APIException('Login error: ${e.toString()}');
     }
-    notifyListeners();
   }
 
-  void clearCart() {
-    _cart.clear();
-    notifyListeners();
+  Future<List<Product>> getProducts() async {
+    final response = await _authenticatedRequest(ApiConfig.products);
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Product.fromJson(json)).toList();
+    }
+    
+    throw APIException(
+      'Failed to load products: ${json.decode(response.body)['detail']}',
+      response.statusCode
+    );
   }
 
-  // --- Tax and Discount Calculations (Student A's Logic) ---
-  final double _taxRate = 0.08; // 8% tax (note: backend uses 16% VAT)
-  final double _discountPercentage = 0.10; // 10% discount
-
-  double get subtotal => _cart.fold(0, (sum, item) => sum + item.totalPrice);
-
-  double get discountValue => subtotal * _discountPercentage;
-
-  double get subtotalAfterDiscount => subtotal - discountValue;
-
-  double get taxValue => subtotalAfterDiscount * _taxRate;
-
-  double get total => subtotalAfterDiscount + taxValue;
+  Future<Map<String, dynamic>> getDailySales(String date) async {
+    final response = await _authenticatedRequest(
+      '${ApiConfig.dailySales}?date_str=$date'
+    );
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    
+    throw APIException(
+      'Failed to load sales report: ${json.decode(response.body)['detail']}',
+      response.statusCode
+    );
+  }
 }

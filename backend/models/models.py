@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 from sqlmodel import SQLModel, Field, Session, create_engine
 from typing import Optional
+from pydantic import validator
 
 load_dotenv()
 
@@ -18,6 +19,18 @@ class Product(SQLModel, table=True):
     description: Optional[str] = None
     price: float
     stock: int
+
+    @validator('price')
+    def validate_price(cls, v):
+        if v <= 0:
+            raise ValueError('Price must be greater than zero')
+        return v
+
+    @validator('stock')
+    def validate_stock(cls, v):
+        if v < 0:
+            raise ValueError('Stock cannot be negative')
+        return v
 
 class Order(SQLModel, table=True):
     __tablename__ = "orders"

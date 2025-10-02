@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, create_engine, SQLModel, select
 from sqlalchemy.sql import func
@@ -13,9 +13,19 @@ import json
 from tax_client import submit_invoice as tax_submit_invoice
 import logging
 from typing import Optional
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(f'logs/app-{datetime.now().strftime("%Y%m%d")}.log'),
+        logging.StreamHandler()
+    ]
+)
 
 # Initialize database and create tables
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///C:/projects/pos/backend/pos.db")
@@ -26,11 +36,19 @@ app = FastAPI(title="Mpepo POS Backend", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",  # Flutter web
+        "http://localhost:8000",  # Development
+        "http://10.0.2.2:8000",  # Android emulator
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 def get_db():
     with Session(engine) as db:
@@ -105,6 +123,7 @@ def test_db(db: Session = Depends(get_db)):
 
 # Authentication Endpoints
 @app.post("/login")
+@limiter.limit("5/minute")
 def login(login: Login):
     if login.username != "admin" or login.password != "password":
         raise HTTPException(status_code=400, detail="Invalid credentials")
@@ -144,14 +163,17 @@ def get_products(
     return products
 
 @app.get("/api/products/{product_id}", response_model=Product)
-def get_product(
+async def get_product(
     product_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get a single product by ID"""
+    """Get product by ID with better error handling"""
     product = db.exec(select(Product).where(Product.id == product_id)).first()
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Product with id {product_id} not found"
+        )
     return product
 
 @app.put("/api/products/{product_id}", response_model=Product)

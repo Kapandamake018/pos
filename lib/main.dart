@@ -6,12 +6,12 @@ import 'Services/pos_service.dart';
 import 'Views/product_listing.dart';
 
 void main() {
-  // Wrap the entire app in the provider.
-  // This ensures that PosService is available to all pages.
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => PosService(),
-      child: const MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: MyApp(),
     ),
   );
 }
