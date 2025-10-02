@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, create_engine, SQLModel, select
 from sqlalchemy.sql import func
@@ -132,11 +132,11 @@ def test_db(db: Session = Depends(get_db)):
 # Authentication Endpoints
 @app.post("/login")
 @limiter.limit("5/minute")
-def login(login: Login):
-    if login.username != "admin" or login.password != "password":
+def login(creds: Login, request: Request):
+    if creds.username != "admin" or creds.password != "password":
         raise HTTPException(status_code=400, detail="Invalid credentials")
     token = jwt.encode(
-        {"sub": login.username, "exp": datetime.utcnow() + timedelta(hours=1)},
+        {"sub": creds.username, "exp": datetime.utcnow() + timedelta(hours=1)},
         SECRET_KEY,
         algorithm="HS256"
     )
