@@ -4,7 +4,7 @@ class ProductModel {
   final String? description;
   final double price;
   final int stock;
-  final String? imageUrl; // Optional for UI compatibility
+  final String? imageUrl;
 
   ProductModel({
     required this.id,
@@ -21,6 +21,6 @@ class ProductModel {
     description: json['description'],
     price: json['price'].toDouble(),
     stock: json['stock'],
-    imageUrl: null, // Backend doesn't provide imageUrl
+    imageUrl: json['imageUrl'], // Backend doesn't provide, but Student A expects it
   );
 }

@@ -11,7 +11,7 @@ class PosService extends ChangeNotifier {
   Map<String, dynamic>? _dailySalesReport;
   Map<String, dynamic>? _taxReport;
   List<ProductModel> _products = [];
-  final String _baseUrl = 'http://127.0.0.1:8000';
+  final String _baseUrl = 'http://10.0.2.2:8000';  // Emulator alias for localhost
 
   String? get accessToken => _accessToken;
   Map<String, dynamic>? get salesReport => _salesReport;

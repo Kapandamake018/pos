@@ -33,19 +33,19 @@ class ProductListingScreen extends StatelessWidget {
       body: isMobile
           ? ProductGridView()
           : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 3, child: ProductGridView()),
-                Expanded(flex: 2, child: CartView()),
-              ],
-            ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 3, child: ProductGridView()),
+          Expanded(flex: 2, child: CartView()),
+        ],
+      ),
       floatingActionButton: isMobile
           ? FloatingActionButton.extended(
-              onPressed: () => _showCartDialog(context),
-              label: Text('View Cart (${context.watch<PosService>().cart.length})'),
-              icon: Icon(Icons.shopping_cart),
-              backgroundColor: Colors.deepOrange,
-            )
+        onPressed: () => _showCartDialog(context),
+        label: Text('View Cart (${context.watch<PosService>().cart.length})'),
+        icon: Icon(Icons.shopping_cart),
+        backgroundColor: Colors.deepOrange,
+      )
           : null,
     );
   }
@@ -112,10 +112,10 @@ class ProductCard extends StatelessWidget {
           Expanded(
             child: product.imageUrl != null
                 ? Image.network(
-                    product.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _placeholderImage(),
-                  )
+              product.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => _placeholderImage(),
+            )
                 : _placeholderImage(),
           ),
           Padding(
@@ -239,12 +239,12 @@ class CartListItem extends StatelessWidget {
       child: ListTile(
         leading: cartItem.product.imageUrl != null
             ? Image.network(
-                cartItem.product.imageUrl!,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _placeholderImage(),
-              )
+          cartItem.product.imageUrl!,
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _placeholderImage(),
+        )
             : _placeholderImage(),
         title: Text(cartItem.product.name),
         subtitle: Text('K${cartItem.product.price.toStringAsFixed(2)}'),
