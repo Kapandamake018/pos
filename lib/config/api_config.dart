@@ -2,7 +2,7 @@ class ApiConfig {
   // Use --dart-define=BASE_URL=... to override per device
   static const String baseUrl = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000', // Android emulator default
+    defaultValue: 'http://10.0.2.2:8001', // Android emulator default
   );
 
   // API endpoints

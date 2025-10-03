@@ -6,9 +6,12 @@ import '../Models/cart_model.dart';
 import '../Models/cart_item_model.dart';
 import '../config/api_config.dart';
 import 'auth_service.dart';
+import 'offline_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class PosService extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final OfflineService _offlineService = OfflineService.instance;
   final Cart _cart = Cart();
 
   List<Product> _products = [];
@@ -107,6 +110,115 @@ class PosService extends ChangeNotifier {
       _cart.removeItem(item);
     }
     notifyListeners();
+  }
+
+  Future<bool> checkout() async {
+    if (cart.items.isEmpty) {
+      _lastError = "Cart is empty.";
+      notifyListeners();
+      return false;
+    }
+
+    final connectivityResult = await (Connectivity().checkConnectivity());
+    final isOnline =
+        connectivityResult.contains(ConnectivityResult.mobile) ||
+        connectivityResult.contains(ConnectivityResult.wifi);
+
+    if (!isOnline) {
+      await _offlineService.queueOrder(cart.items);
+      clearCart();
+      _lastError = "No internet. Order queued for later.";
+      notifyListeners();
+      return true; // From the user's perspective, it's "successful"
+    }
+
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      final orderPayload = {
+        'items': cart.items
+            .map(
+              (item) => {
+                'product_id': item.product.id,
+                'quantity': item.quantity,
+              },
+            )
+            .toList(),
+      };
+
+      final res = await _authenticatedRequest(
+        '/api/orders',
+        method: 'POST',
+        body: orderPayload,
+      ).timeout(const Duration(seconds: 15));
+
+      if (res.statusCode == 200) {
+        clearCart(); // Also calls notifyListeners
+        // Attempt to sync any pending orders after a successful online checkout
+        await syncPendingOrders();
+        return true;
+      } else {
+        _lastError = 'Checkout failed: ${res.body}';
+        notifyListeners();
+        return false;
+      }
+    } on Exception {
+      // If checkout fails due to network, queue it
+      await _offlineService.queueOrder(cart.items);
+      clearCart();
+      _lastError = 'Network error. Order queued for later.';
+      notifyListeners();
+      return true; // "Successful" from user's perspective
+    } finally {
+      _isLoading = false;
+      // Final notification is handled by clearCart or the error cases
+    }
+  }
+
+  Future<void> syncPendingOrders() async {
+    final pendingOrders = await _offlineService.getPendingOrders();
+    if (pendingOrders.isEmpty) return;
+
+    final connectivityResult = await (Connectivity().checkConnectivity());
+    final isOnline =
+        connectivityResult.contains(ConnectivityResult.mobile) ||
+        connectivityResult.contains(ConnectivityResult.wifi);
+
+    if (!isOnline) return;
+
+    for (var orderData in pendingOrders) {
+      final items = (jsonDecode(orderData['items']) as List)
+          .map((itemJson) => CartItem.fromJson(itemJson))
+          .toList();
+
+      final orderPayload = {
+        'items': items
+            .map(
+              (item) => {
+                'product_id': item.product.id,
+                'quantity': item.quantity,
+              },
+            )
+            .toList(),
+      };
+
+      try {
+        final res = await _authenticatedRequest(
+          '/api/orders',
+          method: 'POST',
+          body: orderPayload,
+        );
+
+        if (res.statusCode == 200) {
+          await _offlineService.clearPendingOrder(orderData['id']);
+        }
+        // If it fails, we just leave it in the queue for the next sync attempt.
+      } catch (_) {
+        // Network error during sync, leave it for next time.
+      }
+    }
   }
 
   // Reports (only if you use reporting_screen)

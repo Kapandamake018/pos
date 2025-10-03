@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../Services/pos_service.dart';
 import '../Models/product_model.dart';
 import '../Models/cart_item_model.dart';
+import 'reporting_screen.dart';
+import 'package:badges/badges.dart' as badges;
 
 class ProductListingScreen extends StatefulWidget {
   const ProductListingScreen({super.key});
@@ -54,8 +56,25 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
             title: const Text('Menu'),
             actions: [
               IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                onPressed: () => _showCart(context, pos),
+                icon: const Icon(Icons.bar_chart),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ReportingScreen(),
+                    ),
+                  );
+                },
+              ),
+              // Updated Cart Badge
+              badges.Badge(
+                position: badges.BadgePosition.topEnd(top: 0, end: 3),
+                badgeContent: Text(pos.cart.items.length.toString()),
+                showBadge: pos.cart.items.isNotEmpty,
+                child: IconButton(
+                  icon: const Icon(Icons.shopping_cart),
+                  onPressed: () => _showCart(context, pos),
+                ),
               ),
             ],
           ),
@@ -109,7 +128,6 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
               },
             ),
           ),
-          bottomNavigationBar: _CartSummaryBar(pos: pos),
         );
       },
     );
@@ -118,31 +136,9 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
   void _showCart(BuildContext context, PosService pos) {
     showModalBottomSheet(
       context: context,
-      builder: (_) => _CartSheet(pos: pos),
-    );
-  }
-}
-
-class _CartSummaryBar extends StatelessWidget {
-  final PosService pos;
-  const _CartSummaryBar({required this.pos});
-
-  @override
-  Widget build(BuildContext context) {
-    final itemCount = pos.cart.length;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Text('Items: $itemCount'),
-          const Spacer(),
-          Text('Total: ZMW ${pos.total.toStringAsFixed(2)}'),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: itemCount == 0 ? null : () {},
-            child: const Text('Checkout'),
-          ),
-        ],
+      // Use a Consumer here to rebuild the sheet on cart changes
+      builder: (_) => Consumer<PosService>(
+        builder: (context, pos, _) => _CartSheet(pos: pos),
       ),
     );
   }
@@ -161,19 +157,23 @@ class _CartSheet extends StatelessWidget {
           children: [
             ListTile(
               title: const Text('Your Cart'),
-              trailing: IconButton(
-                icon: const Icon(Icons.clear_all),
-                onPressed: pos.clearCart,
+              trailing: TextButton.icon(
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Clear Cart'),
+                onPressed: pos.cart.items.isEmpty ? null : pos.clearCart,
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
               ),
             ),
             const Divider(height: 1),
             Expanded(
-              child: pos.cart.isEmpty
+              child: pos.cart.items.isEmpty
                   ? const Center(child: Text('Cart is empty'))
                   : ListView.builder(
-                      itemCount: pos.cart.length,
+                      itemCount: pos.cart.items.length,
                       itemBuilder: (_, i) {
-                        final CartItem item = pos.cart[i];
+                        final CartItem item = pos.cart.items[i];
                         return ListTile(
                           title: Text(item.product.name),
                           subtitle: Text(
@@ -216,7 +216,27 @@ class _CartSheet extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: pos.cart.items.isEmpty
+                      ? null
+                      : () async {
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+
+                          final success = await pos.checkout();
+
+                          navigator.pop(); // Close the bottom sheet
+
+                          if (success) {
+                            messenger
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                const SnackBar(
+                                  content: Text('Order placed successfully!'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                          }
+                        },
                   child: const Text('Checkout'),
                 ),
               ),

@@ -79,6 +79,13 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None
     stock: Optional[int] = None
 
+class OrderItem(BaseModel):
+    product_id: int
+    quantity: int
+
+class OrderCreate(BaseModel):
+    items: list[OrderItem]
+
 class InvoiceSubmission(BaseModel):
     tpin: str
     bhfId: str
@@ -220,6 +227,53 @@ def delete_product(
     db.delete(db_product)
     db.commit()
     return {"message": "Product deleted successfully", "id": product_id}
+
+# Order Endpoint
+@app.post("/api/orders", response_model=Order)
+def create_order(
+    order_data: OrderCreate,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(validate_token)
+):
+    """Create an order from a list of items (requires authentication)"""
+    try:
+        total_price = 0
+        # In a real app, you'd fetch all products in one query
+        for item in order_data.items:
+            product = db.get(Product, item.product_id)
+            if not product:
+                raise HTTPException(status_code=404, detail=f"Product with id {item.product_id} not found")
+            if product.stock < item.quantity:
+                raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name}")
+            
+            total_price += product.price * item.quantity
+            product.stock -= item.quantity # Decrease stock
+            db.add(product)
+
+        # For simplicity, we'll create one Order record per item.
+        # A better design would be a single Order with multiple OrderItems.
+        if not order_data.items:
+            raise HTTPException(status_code=400, detail="Cannot create an empty order")
+
+        first_item = order_data.items[0]
+        db_order = Order(
+            product_id=first_item.product_id,
+            quantity=sum(item.quantity for item in order_data.items),
+            total_price=total_price,
+            order_date=str(date.today())
+        )
+        
+        db.add(db_order)
+        db.commit()
+        db.refresh(db_order)
+        
+        return db_order
+
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error creating order: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
 
 # Reporting Endpoints (Student C)
 @app.get("/api/reports/sales")
