@@ -4,6 +4,9 @@ import '../Services/pos_service.dart';
 import '../Models/product_model.dart';
 import '../Models/cart_item_model.dart';
 import 'reporting_screen.dart';
+import 'receipt_screen.dart';
+import 'pending_orders_screen.dart';
+import 'login_screen.dart';
 import 'package:badges/badges.dart' as badges;
 
 class ProductListingScreen extends StatefulWidget {
@@ -55,6 +58,30 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
           appBar: AppBar(
             title: const Text('Menu'),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                tooltip: 'Logout',
+                onPressed: () async {
+                  await context.read<PosService>().logout();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.cloud_off),
+                tooltip: 'Pending Orders',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PendingOrdersScreen(),
+                    ),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.bar_chart),
                 onPressed: () {
@@ -197,6 +224,31 @@ class _CartSheet extends StatelessWidget {
                     ),
             ),
             const Divider(height: 1),
+            // Discount control
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Discount (%)'),
+                      const Spacer(),
+                      Text('${pos.discountPercentage.toStringAsFixed(0)}%'),
+                    ],
+                  ),
+                  Slider(
+                    value: pos.discountPercentage,
+                    min: 0,
+                    max: 100,
+                    divisions: 20,
+                    label: '${pos.discountPercentage.toStringAsFixed(0)}%',
+                    onChanged: (v) => pos.setDiscountPercentage(v),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -230,8 +282,31 @@ class _CartSheet extends StatelessWidget {
                             messenger
                               ..hideCurrentSnackBar()
                               ..showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    'Order placed successfully!',
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                  action: SnackBarAction(
+                                    label: 'View Receipt',
+                                    onPressed: () {
+                                      navigator.push(
+                                        MaterialPageRoute(
+                                          builder: (_) => const ReceiptScreen(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                          } else {
+                            messenger
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
                                 const SnackBar(
-                                  content: Text('Order placed successfully!'),
+                                  content: Text(
+                                    'Checkout failed. Please try again.',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );

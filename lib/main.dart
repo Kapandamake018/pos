@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'services/pos_service.dart';
-import 'views/login_screen.dart';
+import 'Services/pos_service.dart';
+import 'Views/login_screen.dart';
 
 const Color seed = Colors.deepOrange;
 
@@ -11,28 +11,13 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  late final PosService _posService;
-
-  @override
-  void initState() {
-    super.initState();
-    _posService = PosService();
-    // Attempt to sync pending orders when the app starts.
-    _posService.syncPendingOrders();
-  }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => _posService,
+      create: (_) => PosService(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Mpepo POS',
@@ -43,7 +28,11 @@ class _MyAppState extends State<MyApp> {
             seedColor: seed,
             brightness: Brightness.light,
           ),
-          appBarTheme: const AppBarTheme(centerTitle: true),
+          appBarTheme: const AppBarTheme(
+            centerTitle: false,
+            backgroundColor: seed,
+            foregroundColor: Colors.white,
+          ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -66,6 +55,11 @@ class _MyAppState extends State<MyApp> {
           colorScheme: ColorScheme.fromSeed(
             seedColor: seed,
             brightness: Brightness.dark,
+          ),
+          appBarTheme: const AppBarTheme(
+            centerTitle: false,
+            backgroundColor: seed,
+            foregroundColor: Colors.white,
           ),
         ),
         home: const LoginScreen(),

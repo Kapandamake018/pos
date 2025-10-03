@@ -4,6 +4,10 @@ class ApiConfig {
     'BASE_URL',
     defaultValue: 'http://10.0.2.2:8001', // Android emulator default
   );
+  static const String taxApiBaseUrl = String.fromEnvironment(
+    'TAX_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8002', // Mock tax server
+  );
 
   // API endpoints
   static const String login = '/login';

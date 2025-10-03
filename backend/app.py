@@ -126,6 +126,10 @@ class InvoiceSubmission(BaseModel):
     modrNm: str | None = None
     itemList: list
 
+class InvoiceResponseIn(BaseModel):
+    cis_invc_no: Optional[str] = None
+    response: dict
+
 # Health Check Endpoints
 @app.get("/")
 def root():
@@ -272,6 +276,67 @@ def create_order(
     except Exception as e:
         db.rollback()
         logging.error(f"Error creating order: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+# Invoice response logging endpoints (Student B)
+@app.post("/api/invoices/log")
+def log_invoice_response(
+    inv: InvoiceResponseIn,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(validate_token)
+):
+    """Store the tax authority response for an invoice.
+
+    Attempts to infer cis_invc_no from the response payload if not provided.
+    """
+    try:
+        cis = inv.cis_invc_no
+        if not cis:
+            # Try common keys
+            cis = (
+                inv.response.get("cisInvcNo")
+                or inv.response.get("cis_invc_no")
+                or inv.response.get("invoice_number")
+            )
+        if not cis:
+            raise HTTPException(status_code=400, detail="cis_invc_no missing and could not be inferred from response")
+
+        db_log = InvoiceLog(cis_invc_no=str(cis), response=json.dumps(inv.response))
+        db.add(db_log)
+        db.commit()
+        db.refresh(db_log)
+        return {"id": db_log.id, "cis_invc_no": db_log.cis_invc_no}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error logging invoice response: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+
+@app.get("/api/invoices/logs")
+def list_invoice_logs(
+    cis_invc_no: Optional[str] = None,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    payload: dict = Depends(validate_token)
+):
+    """List stored invoice responses, optionally filtered by cis_invc_no."""
+    try:
+        query = select(InvoiceLog)
+        if cis_invc_no:
+            query = query.where(InvoiceLog.cis_invc_no == cis_invc_no)
+        rows = db.exec(query.limit(limit)).all()
+        result = []
+        for r in rows:
+            try:
+                resp = json.loads(r.response)
+            except Exception:
+                resp = {"raw": r.response}
+            result.append({"id": r.id, "cis_invc_no": r.cis_invc_no, "response": resp})
+        return result
+    except Exception as e:
+        logging.error(f"Error listing invoice logs: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
 
 

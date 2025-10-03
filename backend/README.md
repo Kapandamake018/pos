@@ -1,29 +1,51 @@
-# Mpepo Kitchen POS Backend (Student C)
+# Mpepo Kitchen POS Backend
 
 ## Overview
-Developed the Python backend for the Mpepo Kitchen POS system using FastAPI, SQLModel, and SQLite. Implemented endpoints for authentication, invoice submission, and log retrieval, with a seeded database for testing.
+FastAPI + SQLModel + SQLite backend for the POS app. Includes authentication, products/orders, reporting, and invoice logging of tax authority responses. A lightweight mock tax authority is included for local testing.
 
-## Achievements
-- Implemented `/login`, `/api/invoices/submit`, and `/api/invoices/logs/{cis_invc_no}` endpoints.
-- Fixed deprecated `session.query()` warning in `seed.py`.
-- Seeded `pos.db` with 6 products, 4 orders, and 4 invoices.
-- Resolved empty `invoice_logs` issue after database deletion.
-- Added debug logging and duplicate `cis_invc_no` checks in `app.py`.
-- Created Postman collection for API documentation.
+## Key Endpoints
+- `POST /login`
+- `GET /api/products`, `POST /api/orders`, `GET /api/reports/sales`
+- `POST /api/invoices/log` — store authority response for an invoice
+- `GET /api/invoices/logs` — list/search stored responses
 
-## Database Schema
-- `products`: Stores menu items (id, name, description, price, stock).
-- `orders`: Stores customer orders (id, product_id, quantity, total_price, order_date).
-- `invoices`: Stores invoice details (id, order_id, cis_invc_no, total_amount, tax_amount, invoice_date).
-- `invoice_logs`: Stores tax API responses (id, cis_invc_no, response).
+## Database Schema (SQLite)
+- `products`: menu items
+- `orders`: placed orders
+- `invoices`: invoice summary rows
+- `invoice_logs`: raw authority response payloads per `cis_invc_no`
 
-## How to Run
-1. Activate virtual environment: `.\venv\Scripts\Activate.ps1`
-2. Start server: `uvicorn app:app --reload --host 127.0.0.1 --port 8000 --log-level debug`
-3. Seed database: `python seed.py`
-4. Test endpoints using Postman collection: `Mpepo_POS_API.postman_collection.json`
+## Setup and Run (Windows PowerShell)
+1) Create/activate venv and install deps
+	- Activate: `./.venv/Scripts/Activate.ps1`
+	- Install: `python -m pip install -r backend/requirements.txt`
 
-## Test Results
-- Seeded data: 6 products, 4 orders, 4 invoices.
-- Successful `/api/invoices/submit` for INV-006 and INV-007, logged in `invoice_logs`.
-- All endpoints return `200 OK`.
+2) Start API server (port 8001)
+	- `python -m uvicorn backend.app:app --host 127.0.0.1 --port 8001 --reload`
+
+3) Seed database (optional)
+	- `python backend/seed.py`
+
+4) Postman collection
+	- Import `backend/postman_collection.json`
+
+## Mock Tax Authority (for local testing)
+A small service that simulates a tax authority.
+
+- File: `backend/mock_tax.py`
+- Start on port 8002:
+  - `python -m uvicorn backend.mock_tax:app --host 127.0.0.1 --port 8002 --reload`
+- Health check: `GET http://127.0.0.1:8002/health`
+- Submit invoice: `POST http://127.0.0.1:8002/invoices/submit`
+  - Optional rejection: add `?fail=true` to simulate a 400 error
+
+### Configure the mobile app
+Run Flutter with:
+- `--dart-define=BASE_URL=http://127.0.0.1:8001`
+- `--dart-define=TAX_BASE_URL=http://127.0.0.1:8002`
+
+On Android emulator, use `http://10.0.2.2:<port>` instead of `127.0.0.1`.
+
+## Notes
+- Dependencies are pinned in `backend/requirements.txt`.
+- Logs are written under `backend/logs/` when enabled.

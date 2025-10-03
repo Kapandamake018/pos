@@ -1,17 +1,21 @@
 import 'dart:convert';
+import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../Models/product_model.dart';
 import '../Models/cart_model.dart';
 import '../Models/cart_item_model.dart';
+import '../Models/receipt_model.dart';
 import '../config/api_config.dart';
 import 'auth_service.dart';
 import 'offline_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'tax_service.dart';
 
 class PosService extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final OfflineService _offlineService = OfflineService.instance;
+  final TaxService _taxService = TaxService();
   final Cart _cart = Cart();
 
   List<Product> _products = [];
@@ -22,6 +26,7 @@ class PosService extends ChangeNotifier {
   Map<String, dynamic>? _salesReport;
   Map<String, dynamic>? _dailySalesReport;
   Map<String, dynamic>? _taxReport;
+  Receipt? _lastReceipt;
 
   // Getters expected by existing UI
   bool get isLoading => _isLoading;
@@ -37,10 +42,12 @@ class PosService extends ChangeNotifier {
   double get discountValue => _cart.discountValue;
   double get taxValue => _cart.taxValue;
   double get total => _cart.total;
+  double get discountPercentage => _cart.discountPercentage;
 
   Map<String, dynamic>? get salesReport => _salesReport;
   Map<String, dynamic>? get dailySalesReport => _dailySalesReport;
   Map<String, dynamic>? get taxReport => _taxReport;
+  Receipt? get lastReceipt => _lastReceipt;
 
   // Auth
   Future<String> login(String username, String password) async {
@@ -71,7 +78,7 @@ class PosService extends ChangeNotifier {
         '/api/products',
       ).timeout(const Duration(seconds: 10));
 
-      if (res.statusCode == 200) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
         final List data = json.decode(res.body) as List;
         _products = data
             .map((e) => Product.fromJson(e as Map<String, dynamic>))
@@ -109,6 +116,14 @@ class PosService extends ChangeNotifier {
     } else {
       _cart.removeItem(item);
     }
+    notifyListeners();
+  }
+
+  void setDiscountPercentage(double percent) {
+    // Clamp between 0 and 100
+    if (percent.isNaN || !percent.isFinite) return;
+    final clamped = percent.clamp(0, 100).toDouble();
+    _cart.discountPercentage = clamped;
     notifyListeners();
   }
 
@@ -154,10 +169,76 @@ class PosService extends ChangeNotifier {
         body: orderPayload,
       ).timeout(const Duration(seconds: 15));
 
-      if (res.statusCode == 200) {
+      // Accept any 2xx status as success (some backends return 201/204)
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        // Snapshot current cart to build a receipt before clearing
+        _lastReceipt = Receipt(
+          items: List.from(
+            cart.items.map((e) => CartItem.fromJson(e.toJson())),
+          ),
+          subtotal: subtotal,
+          discountValue: discountValue,
+          taxValue: taxValue,
+          total: total,
+          dateTimeString: DateTime.now().toIso8601String(),
+          orderData: orderPayload,
+        );
+        // Submit the invoice to the tax authority without blocking checkout
+        try {
+          final orderDetails = json.decode(res.body) as Map<String, dynamic>;
+          unawaited(
+            _taxService
+                .submitInvoice(orderDetails)
+                .timeout(const Duration(seconds: 5))
+                .then(
+                  (resp) {
+                    // Save authority response onto receipt if present
+                    if (_lastReceipt != null) {
+                      _lastReceipt!.taxResponse = resp;
+                      notifyListeners();
+                    }
+                    // Fire-and-forget logging of the tax response to backend
+                    try {
+                      final cis =
+                          resp['cis_invc_no'] ??
+                          resp['cisInvcNo'] ??
+                          resp['invoice_number'];
+                      unawaited(
+                        _authenticatedRequest(
+                          '/api/invoices/log',
+                          method: 'POST',
+                          body: {
+                            if (cis != null) 'cis_invc_no': cis,
+                            'response': resp,
+                          },
+                        ).then((_) {}, onError: (_) {}),
+                      );
+                    } catch (_) {}
+                  },
+                  onError: (e) {
+                    if (kDebugMode) {
+                      print('Failed to submit invoice to tax authority: $e');
+                    }
+                    // Surface the error on the receipt so UI does not stay in 'Submitting...'
+                    if (_lastReceipt != null) {
+                      _lastReceipt!.taxResponse = {
+                        'status': 'failed',
+                        'message': e.toString(),
+                      };
+                      notifyListeners();
+                    }
+                  },
+                ),
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            print('Failed to parse order details for tax submission: $e');
+          }
+        }
+
         clearCart(); // Also calls notifyListeners
-        // Attempt to sync any pending orders after a successful online checkout
-        await syncPendingOrders();
+        // Fire-and-forget sync of any pending orders as well
+        unawaited(syncPendingOrders());
         return true;
       } else {
         _lastError = 'Checkout failed: ${res.body}';
@@ -173,7 +254,8 @@ class PosService extends ChangeNotifier {
       return true; // "Successful" from user's perspective
     } finally {
       _isLoading = false;
-      // Final notification is handled by clearCart or the error cases
+      // Make sure UI stops showing the global loading spinner
+      notifyListeners();
     }
   }
 
@@ -211,7 +293,7 @@ class PosService extends ChangeNotifier {
           body: orderPayload,
         );
 
-        if (res.statusCode == 200) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
           await _offlineService.clearPendingOrder(orderData['id']);
         }
         // If it fails, we just leave it in the queue for the next sync attempt.
@@ -219,6 +301,15 @@ class PosService extends ChangeNotifier {
         // Network error during sync, leave it for next time.
       }
     }
+  }
+
+  // UI helpers for pending orders screen
+  Future<List<Map<String, dynamic>>> getPendingOrdersUI() async {
+    return _offlineService.getPendingOrders();
+  }
+
+  Future<void> retryPendingNow() async {
+    await syncPendingOrders();
   }
 
   // Reports (only if you use reporting_screen)
@@ -252,6 +343,46 @@ class PosService extends ChangeNotifier {
       return;
     }
     throw Exception('Failed to load tax report: ${res.body}');
+  }
+
+  // Manual resubmission of invoice to tax authority from Receipt screen
+  Future<void> resubmitTax(Map<String, dynamic> orderData) async {
+    try {
+      final resp = await _taxService
+          .submitInvoice(orderData)
+          .timeout(const Duration(seconds: 5));
+      if (_lastReceipt != null) {
+        _lastReceipt!.taxResponse = resp;
+        notifyListeners();
+      }
+      // Also log to backend
+      try {
+        final cis =
+            resp['cis_invc_no'] ?? resp['cisInvcNo'] ?? resp['invoice_number'];
+        unawaited(
+          _authenticatedRequest(
+            '/api/invoices/log',
+            method: 'POST',
+            body: {if (cis != null) 'cis_invc_no': cis, 'response': resp},
+          ).then((_) {}, onError: (_) {}),
+        );
+      } catch (_) {}
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Logout: clear saved token and reset local session state
+  Future<void> logout() async {
+    await _authService.deleteToken();
+    _products = [];
+    _cart.clear();
+    _lastReceipt = null;
+    _lastError = null;
+    _salesReport = null;
+    _dailySalesReport = null;
+    _taxReport = null;
+    notifyListeners();
   }
 
   // Internal helper

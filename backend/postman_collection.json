@@ -2,13 +2,14 @@
 	"info": {
 		"_postman_id": "acf71c4e-2c79-4deb-862a-1c5afb4e0fd5",
 		"name": "Mpepo Kitchen POS - Complete API",
-		"description": "Complete API collection for Mpepo Kitchen POS System - Student C contributions: Authentication, Products CRUD, Reports",
+		"description": "Complete API collection for Mpepo Kitchen POS System - Auth, Products, Reports, Invoices",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "48219673"
 	},
 	"item": [
 		{
 			"name": "Authentication",
+			"description": "Authentication endpoints",
 			"item": [
 				{
 					"name": "Login",
@@ -16,14 +17,20 @@
 						{
 							"listen": "test",
 							"script": {
+								"type": "text/javascript",
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('access_token', jsonData.access_token);",
-									"    console.log('Token saved:', jsonData.access_token);",
-									"}"
-								],
-								"type": "text/javascript"
+									"pm.test('Saved access_token', function () {",
+									"  if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    try {",
+									"      const data = pm.response.json();",
+									"      if (data && data.access_token) {",
+									"        pm.collectionVariables.set('access_token', data.access_token);",
+									"      }",
+									"    } catch (e) { /* ignore JSON parse errors */ }",
+									"  }",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});"
+								]
 							}
 						}
 					],
@@ -46,7 +53,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8000/login",
+							"raw": "http://127.0.0.1:8001/login",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -54,7 +61,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"login"
 							]
@@ -75,7 +82,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/protected-test",
+							"raw": "http://127.0.0.1:8001/protected-test",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -83,7 +90,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"protected-test"
 							]
@@ -92,11 +99,11 @@
 					},
 					"response": []
 				}
-			],
-			"description": "Authentication endpoints - Student C"
+			]
 		},
 		{
 			"name": "Products CRUD (Student C)",
+			"description": "Product CRUD operations",
 			"item": [
 				{
 					"name": "Get All Products",
@@ -104,7 +111,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/products?skip=0&limit=100",
+							"raw": "http://127.0.0.1:8001/api/products?skip=0&limit=100",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -112,7 +119,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"products"
@@ -140,7 +147,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/products/1",
+							"raw": "http://127.0.0.1:8001/api/products/1",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -148,7 +155,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"products",
@@ -185,7 +192,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/products",
+							"raw": "http://127.0.0.1:8001/api/products",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -193,7 +200,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"products"
@@ -229,7 +236,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/products/1",
+							"raw": "http://127.0.0.1:8001/api/products/1",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -237,7 +244,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"products",
@@ -260,7 +267,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/products/9",
+							"raw": "http://127.0.0.1:8001/api/products/9",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -268,7 +275,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"products",
@@ -279,11 +286,11 @@
 					},
 					"response": []
 				}
-			],
-			"description": "Product CRUD operations - Student C"
+			]
 		},
 		{
 			"name": "Reports (Student C)",
+			"description": "Reporting endpoints",
 			"item": [
 				{
 					"name": "Sales Report",
@@ -297,7 +304,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/reports/sales",
+							"raw": "http://127.0.0.1:8001/api/reports/sales",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -305,8 +312,9 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
+								"api",
 								"reports",
 								"sales"
 							]
@@ -327,7 +335,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/reports/daily-sales?date_str=2025-10-01",
+							"raw": "http://127.0.0.1:8001/api/reports/daily-sales?date_str=2025-10-01",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -335,7 +343,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"reports",
@@ -365,7 +373,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/reports/tax?date_str=2025-10-01",
+							"raw": "http://127.0.0.1:8001/api/reports/tax?date_str=2025-10-01",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -373,7 +381,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"reports",
@@ -391,14 +399,36 @@
 					},
 					"response": []
 				}
-			],
-			"description": "Reporting endpoints - Student C"
+			]
 		},
 		{
 			"name": "Invoices (Student B)",
+			"description": "Invoice submission and logging",
 			"item": [
 				{
-					"name": "Submit Invoice",
+					"name": "Submit Invoice (Mock)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoice_number\": \"CIS-INV-001234\",\n  \"status\": \"accepted\",\n  \"message\": \"Invoice received\"\n}"
+						},
+						"url": {
+							"raw": "{{TAX_BASE_URL}}/invoices/submit"
+						},
+						"description": "Submit invoice to Tax Mock (use TAX_BASE_URL collection variable)"
+					},
+					"response": []
+				},
+				{
+					"name": "Log Invoice Response",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -415,15 +445,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"tpin\": \"1234567890\",\n  \"bhfId\": \"000\",\n  \"cisInvcNo\": \"INV-009\",\n  \"custTpin\": \"0987654321\",\n  \"custNm\": \"Test Customer\",\n  \"salesTyCd\": \"N\",\n  \"rcptTyCd\": \"S\",\n  \"pmtTyCd\": \"CASH\",\n  \"salesSttsCd\": \"02\",\n  \"cfmDt\": \"20250925140000\",\n  \"salesDt\": \"20250925\",\n  \"totItemCnt\": 1,\n  \"taxblAmtA\": 10.0,\n  \"taxAmtA\": 1.6,\n  \"totTaxblAmt\": 10.0,\n  \"totTaxAmt\": 1.6,\n  \"totAmt\": 11.6,\n  \"itemList\": [\n    {\n      \"itemSeq\": 1,\n      \"itemNm\": \"Burger\",\n      \"qty\": 2,\n      \"prc\": 5.0,\n      \"splyAmt\": 10.0,\n      \"taxTyCd\": \"A\",\n      \"taxblAmt\": 10.0,\n      \"taxAmt\": 1.6,\n      \"totAmt\": 11.6\n    }\n  ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n  \"cis_invc_no\": \"CIS-INV-001234\",\n  \"response\": {\n    \"status\": \"accepted\",\n    \"message\": \"Invoice received\"\n  }\n}"
 						},
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/invoices/submit",
+							"raw": "http://127.0.0.1:8001/api/invoices/log",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -431,14 +456,14 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"invoices",
-								"submit"
+								"log"
 							]
 						},
-						"description": "Submit invoice to ZRA (requires authentication)"
+						"description": "Log tax authority response (requires authentication)"
 					},
 					"response": []
 				},
@@ -454,7 +479,7 @@
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/invoices/logs/INV-001",
+							"raw": "http://127.0.0.1:8001/api/invoices/logs?cis_invc_no=INV-001",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -462,23 +487,28 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"invoices",
-								"logs",
-								"INV-001"
+								"logs"
+							],
+							"query": [
+								{
+									"key": "cis_invc_no",
+									"value": "INV-001"
+								}
 							]
 						},
-						"description": "Get invoice submission log (requires authentication)"
+						"description": "Get invoice submission logs (requires authentication)"
 					},
 					"response": []
 				}
-			],
-			"description": "Invoice submission and logging - Student B"
+			]
 		},
 		{
 			"name": "ZRA Mock Server",
+			"description": "ZRA Tax Authority mock endpoints",
 			"item": [
 				{
 					"name": "ZRA Mock Submit Invoice",
@@ -523,11 +553,11 @@
 					},
 					"response": []
 				}
-			],
-			"description": "ZRA Tax Authority mock endpoints"
+			]
 		},
 		{
 			"name": "Health Checks",
+			"description": "Health check endpoints",
 			"item": [
 				{
 					"name": "Root Endpoint",
@@ -535,7 +565,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:8000/",
+							"raw": "http://127.0.0.1:8001/",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -543,7 +573,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								""
 							]
@@ -558,7 +588,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:8000/test-db",
+							"raw": "http://127.0.0.1:8001/test-db",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -566,7 +596,7 @@
 								"0",
 								"1"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"test-db"
 							]
@@ -575,14 +605,18 @@
 					},
 					"response": []
 				}
-			],
-			"description": "Health check endpoints"
+			]
 		}
 	],
 	"variable": [
 		{
 			"key": "access_token",
 			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "TAX_BASE_URL",
+			"value": "http://127.0.0.1:8002",
 			"type": "default"
 		}
 	]
