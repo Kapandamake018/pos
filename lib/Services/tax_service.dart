@@ -1,13 +1,21 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../app_config.dart';
 
 class TaxService {
   Future<Map<String, dynamic>> submitInvoice(
     Map<String, dynamic> invoice,
   ) async {
-    // We use a different endpoint for the mock tax authority
-    final url = Uri.parse('${ApiConfig.taxApiBaseUrl}/invoices/submit');
+    // Prefer runtime override from SharedPreferences (via AppConfig)
+    String base;
+    try {
+      final cfg = await AppConfig.load();
+      base = cfg.taxUrl;
+    } catch (_) {
+      base = ApiConfig.taxApiBaseUrl;
+    }
+    final url = Uri.parse('$base/invoices/submit');
     final headers = ApiConfig.getHeaders();
     final body = json.encode(invoice);
 

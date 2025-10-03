@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import '../Services/pos_service.dart';
 import 'product_listing.dart';
+import 'settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,7 +50,24 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      // Allow scaffold to resize when the keyboard appears so fields aren't
+      // obscured. We'll also add animated bottom padding to the scroll area
+      // based on viewInsets to smoothly shift the form up.
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            },
+          ),
+        ],
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -59,13 +77,23 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 24,
-                ),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 24,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).viewInsets.bottom -
+                    MediaQuery.of(context).padding.top -
+                    kToolbarHeight -
+                    48,
+              ),
+              child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Card(
@@ -83,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             CircleAvatar(
                               radius: 36,
-                              backgroundColor: cs.primary.withOpacity(0.15),
+                              backgroundColor: cs.primary.withAlpha(38),
                               child: Icon(
                                 Icons.restaurant_menu,
                                 color: cs.primary,
@@ -119,8 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                               validator: (v) {
                                 final value = v?.trim() ?? '';
-                                if (value.isEmpty)
+                                if (value.isEmpty) {
                                   return 'Username is required';
+                                }
                                 if (RegExp(r'\d').hasMatch(value)) {
                                   return 'Username cannot contain numbers';
                                 }
@@ -137,8 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               validator: (v) {
                                 final value = v?.trim() ?? '';
-                                if (value.isEmpty)
+                                if (value.isEmpty) {
                                   return 'Password is required';
+                                }
                                 return null;
                               },
                             ),

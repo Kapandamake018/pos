@@ -7,6 +7,7 @@ import 'reporting_screen.dart';
 import 'receipt_screen.dart';
 import 'pending_orders_screen.dart';
 import 'login_screen.dart';
+import 'settings_screen.dart';
 import 'package:badges/badges.dart' as badges;
 
 class ProductListingScreen extends StatefulWidget {
@@ -67,6 +68,18 @@ class _ProductListingScreenState extends State<ProductListingScreen> {
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                     (route) => false,
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Settings',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
                   );
                 },
               ),

@@ -11,6 +11,7 @@ import 'auth_service.dart';
 import 'offline_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'tax_service.dart';
+import '../app_config.dart';
 
 class PosService extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -51,8 +52,9 @@ class PosService extends ChangeNotifier {
 
   // Auth
   Future<String> login(String username, String password) async {
+    final base = await _resolveBaseUrl();
     final res = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}${ApiConfig.login}'),
+      Uri.parse('$base${ApiConfig.login}'),
       headers: ApiConfig.getHeaders(),
       body: json.encode({'username': username, 'password': password}),
     );
@@ -392,7 +394,8 @@ class PosService extends ChangeNotifier {
     Map<String, dynamic>? body,
   }) async {
     final token = await _authService.getToken();
-    final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    final base = await _resolveBaseUrl();
+    final uri = Uri.parse('$base$endpoint');
     final headers = ApiConfig.getHeaders(token);
 
     switch (method) {
@@ -402,6 +405,16 @@ class PosService extends ChangeNotifier {
         return http.post(uri, headers: headers, body: json.encode(body));
       default:
         throw Exception('Unsupported HTTP method: $method');
+    }
+  }
+
+  // Prefer runtime override from SharedPreferences (via AppConfig)
+  Future<String> _resolveBaseUrl() async {
+    try {
+      final cfg = await AppConfig.load();
+      return cfg.baseUrl;
+    } catch (_) {
+      return ApiConfig.baseUrl;
     }
   }
 }
